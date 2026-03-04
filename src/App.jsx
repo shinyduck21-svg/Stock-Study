@@ -66,7 +66,7 @@ const App = () => {
 
   // 마크다운 파일 로드 로직
   useEffect(() => {
-    if (viewMode === 'detail' && selectedPost && (selectedPost.type === 'text' || selectedPost.type === 'audio')) {
+    if (viewMode === 'detail' && selectedPost) {
       if (selectedPost.fileName) {
         fetch(`./docs/${selectedPost.fileName}`)
           .then(res => res.text())
