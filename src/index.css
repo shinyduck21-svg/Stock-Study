@@ -1,0 +1,67 @@
+:root {
+  /* 색상 팔레트 (HSL 기반 - 프리미엄 다크 모드) */
+  --bg-main: 220 20% 6%;
+  --bg-card: 220 20% 10%;
+  --bg-glass: 220 20% 12% / 0.7;
+  
+  --text-main: 220 10% 90%;
+  --text-muted: 220 10% 60%;
+  
+  --primary: 160 80% 45%; /* 에메랄드 그린 (성장 상징) */
+  --primary-glow: 160 80% 45% / 0.3;
+  --secondary: 210 100% 60%; /* 스카이 블루 (신뢰 상징) */
+  
+  --border: 220 20% 15%;
+  --glass-blur: 12px;
+  
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: hsl(var(--bg-main));
+  color: hsl(var(--text-main));
+  font-family: var(--font-family);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+#root {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* 글래스모피즘 공통 클래스 */
+.glass-card {
+  background: hsl(var(--bg-glass));
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid hsl(var(--border));
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
