@@ -24,6 +24,7 @@ const App = () => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [selectedPost, setSelectedPost] = useState(null);
   const [markdownContent, setMarkdownContent] = useState('');
+  const [posts, setPosts] = useState([]);
 
   // 카테고리 정의
   const categories = [
@@ -33,55 +34,13 @@ const App = () => {
     { id: '기업분석도감', title: '기업분석도감', icon: <BookOpen size={20} /> }
   ];
 
-  // 실제 데이터 구조
-  const posts = [
-    {
-      id: 1,
-      title: '[투자학교] 잘 해내고 있습니다. 평정심을 잃지 마시고 묵묵히 본질을 지켜갑시다.',
-      time: '약 2시간 전',
-      type: 'video',
-      category: '언제나 데이트',
-      likes: 1031,
-      isRead: true,
-      thumbnail: 'https://images.unsplash.com/photo-1611974714008-6623532f8eca?auto=format&fit=crop&q=80&w=800',
-      url: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-    },
-    {
-      id: 2,
-      title: '3월 4일 담샘의 언제나 데이트 | 시장 변화에 대한 견해를 전해드립니다.',
-      time: '약 2시간 전',
-      type: 'text',
-      category: '언제나 데이트',
-      likes: 1076,
-      isRead: false,
-      isNew: true,
-      thumbnail: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&q=80&w=800',
-      fileName: 'always_text.md'
-    },
-    {
-      id: 3,
-      title: '3월 4일 수요일 굿모닝 담샘',
-      time: '약 14시간 전',
-      type: 'audio',
-      category: '굿모닝 담샘',
-      likes: 1193,
-      isRead: true,
-      thumbnail: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=800',
-      fileName: 'morning_briefing.md',
-      audioUrl: 'https://docs.google.com/uc?export=open&id=180MUxKJSV4kDrPBjlnO3vMPqKWVC33DA'
-    },
-    {
-      id: 4,
-      title: '글 기업분석도감: 2차 전지 핵심 기업 리서치',
-      time: '1일 전',
-      type: 'text',
-      category: '기업분석도감',
-      likes: 850,
-      isRead: false,
-      thumbnail: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800',
-      fileName: 'company_analysis.md'
-    }
-  ];
+  // JSON 데이터 로드
+  useEffect(() => {
+    fetch('./data/posts.json')
+      .then(res => res.json())
+      .then(data => setPosts(data))
+      .catch(err => console.error('Error fetching posts:', err));
+  }, []);
 
   const filteredPosts = activeCategory === 'all'
     ? posts
@@ -230,44 +189,52 @@ const App = () => {
                   <h2 className="viewer-title">{selectedPost.title}</h2>
                 </header>
 
-                {selectedPost.type === 'video' ? (
-                  <div className="video-viewer">
-                    <div className="video-container">
-                      <iframe
-                        key={selectedPost.url}
-                        src={selectedPost.url}
-                        title="Video player"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      ></iframe>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="markdown-viewer">
-                    {selectedPost.type === 'audio' && (
-                      <div className="audio-player-bar glass-card">
-                        <div className="audio-info">
-                          <Volume2 size={20} className="primary-text" />
-                          <span>{selectedPost.category} - 오늘의 음성 브리핑</span>
-                        </div>
-                        <div className="audio-embed-container">
-                          <iframe
-                            src={`https://drive.google.com/file/d/${selectedPost.audioUrl.split('id=')[1]}/preview`}
-                            width="100%"
-                            height="60"
-                            frameBorder="0"
-                            allow="autoplay"
-                            title="Google Drive Audio Player"
-                          ></iframe>
-                        </div>
+                <div className="viewer-content">
+                  {/* 영상이 있는 경우 */}
+                  {selectedPost.url && (
+                    <div className="video-viewer">
+                      <div className="video-container">
+                        <iframe
+                          key={selectedPost.url}
+                          src={selectedPost.url}
+                          title="Video player"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        ></iframe>
                       </div>
-                    )}
-                    <div className="markdown-content">
-                      <ReactMarkdown>{markdownContent}</ReactMarkdown>
                     </div>
-                  </div>
-                )}
+                  )}
+
+                  {/* 오디오가 있는 경우 */}
+                  {selectedPost.audioUrl && (
+                    <div className="audio-player-bar glass-card">
+                      <div className="audio-info">
+                        <Volume2 size={20} className="primary-text" />
+                        <span>{selectedPost.category} - 관련 음성 브리핑</span>
+                      </div>
+                      <div className="audio-embed-container">
+                        <iframe
+                          src={`https://drive.google.com/file/d/${selectedPost.audioUrl.split('id=')[1]}/preview`}
+                          width="100%"
+                          height="60"
+                          frameBorder="0"
+                          allow="autoplay"
+                          title="Google Drive Audio Player"
+                        ></iframe>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 텍스트(마크다운)가 있는 경우 */}
+                  {selectedPost.fileName && (
+                    <div className="markdown-viewer">
+                      <div className="markdown-content">
+                        <ReactMarkdown>{markdownContent}</ReactMarkdown>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 <footer className="edit-footer">
                   <a href="https://github.com" target="_blank" rel="noreferrer" className="edit-btn">
