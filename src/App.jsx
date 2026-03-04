@@ -90,10 +90,7 @@ const App = () => {
           </div>
 
           <div className="nav-links desktop-only">
-            <a href="https://github.com" target="_blank" rel="noreferrer" className="github-link">
-              <Github size={20} />
-              GitHub
-            </a>
+            {/* GitHub 링크 제거됨 */}
           </div>
 
           <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>
@@ -235,12 +232,6 @@ const App = () => {
                     </div>
                   )}
                 </div>
-
-                <footer className="edit-footer">
-                  <a href="https://github.com" target="_blank" rel="noreferrer" className="edit-btn">
-                    <ExternalLink size={16} /> 깃허브에서 이 문서 수정하기
-                  </a>
-                </footer>
               </article>
             </div>
           )}
