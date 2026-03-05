@@ -1,5 +1,30 @@
 [
     {
+        "id": 8,
+        "title": "840화. 🙋 3월 5일 담쌤의 언제나 데이트ㅣ핵심은 얼개를 보고 어떤기업에 오래 투자하느냐 입니다",
+        "time": "방금 전",
+        "type": "text",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "thumbnail": "https://images.unsplash.com/photo-1624555130581-1d9cca783bc0?auto=format&fit=crop&q=80&w=800",
+        "fileName": "briefing_03.md"
+    },
+    {
+        "id": 7,
+        "title": "472화. 🌞 3월 5일 목요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "text",
+        "category": "굿모닝 담쌤",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "audioUrl": "https://drive.google.com/file/d/1W39il0JxtNjSqnDu1Z6o8cPBrwlCJwt5",
+        "thumbnail": "https://images.unsplash.com/photo-1624555130581-1d9cca783bc0?auto=format&fit=crop&q=80&w=800",
+        "fileName": "briefing_04.md"
+    },
+    {
         "id": 6,
         "title": "3월 3일(화) 2회차 라이브 수업 녹화본",
         "time": "방금 전",
