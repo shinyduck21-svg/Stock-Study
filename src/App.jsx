@@ -34,6 +34,16 @@ const App = () => {
     { id: '기업분석도감', title: '기업분석도감', icon: <BookOpen size={20} /> }
   ];
 
+  // 구글 드라이브 ID 추출 유틸리티
+  const getGoogleDriveId = (url) => {
+    if (!url) return null;
+    const matchId = url.match(/[?&]id=([^&#]+)/);
+    if (matchId) return matchId[1];
+    const matchFile = url.match(/\/file\/d\/([^/]+)/);
+    if (matchFile) return matchFile[1];
+    return null;
+  };
+
   // JSON 데이터 로드
   useEffect(() => {
     fetch('./data/posts.json')
@@ -212,7 +222,7 @@ const App = () => {
                       </div>
                       <div className="audio-embed-container">
                         <iframe
-                          src={`https://drive.google.com/file/d/${selectedPost.audioUrl.split('id=')[1]}/preview`}
+                          src={`https://drive.google.com/file/d/${getGoogleDriveId(selectedPost.audioUrl)}/preview`}
                           width="100%"
                           height="60"
                           frameBorder="0"
