@@ -8,7 +8,6 @@
         "likes": 0,
         "isRead": false,
         "isNew": true,
-        "thumbnail": "https://images.unsplash.com/photo-1624555130581-1d9cca783bc0?auto=format&fit=crop&q=80&w=800",
         "fileName": "briefing_03.md"
     },
     {
@@ -21,7 +20,6 @@
         "isRead": false,
         "isNew": true,
         "audioUrl": "https://drive.google.com/file/d/1W39il0JxtNjSqnDu1Z6o8cPBrwlCJwt5",
-        "thumbnail": "https://images.unsplash.com/photo-1624555130581-1d9cca783bc0?auto=format&fit=crop&q=80&w=800",
         "fileName": "briefing_04.md"
     },
     {
@@ -34,7 +32,6 @@
         "isRead": false,
         "isNew": true,
         "url": "https://drive.google.com/file/d/12KM6jiTDWWuZmLJLNljZ_cO5uOQuSmCe/preview",
-        "thumbnail": "https://images.unsplash.com/photo-1624555130581-1d9cca783bc0?auto=format&fit=crop&q=80&w=800",
         "fileName": "briefing_05.md"
     },
     {
@@ -46,7 +43,6 @@
         "likes": 0,
         "isRead": false,
         "isNew": true,
-        "thumbnail": "https://images.unsplash.com/photo-1624555130581-1d9cca783bc0?auto=format&fit=crop&q=80&w=800",
         "url": "https://drive.google.com/file/d/1vLpYo5zd957f9ZKfGP_jRVqN-07A2kjJ/preview",
         "fileName": "briefing_02.md"
     },
@@ -58,7 +54,6 @@
         "category": "언제나 데이트",
         "likes": 1031,
         "isRead": true,
-        "thumbnail": "https://images.unsplash.com/photo-1611974714008-6623532f8eca?auto=format&fit=crop&q=80&w=800",
         "fileName": "briefing_06.md"
     },
     {
@@ -70,7 +65,6 @@
         "likes": 1076,
         "isRead": false,
         "isNew": true,
-        "thumbnail": "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&q=80&w=800",
         "audioUrl": "hhttps://drive.google.com/file/d/1tusBLLaXIQcP7S8MiX7oMo5SJC0nZ90_",
         "fileName": "briefing_07.md"
     },
@@ -82,7 +76,6 @@
         "category": "굿모닝 담샘",
         "likes": 1193,
         "isRead": true,
-        "thumbnail": "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=800",
         "fileName": "morning_briefing.md",
         "audioUrl": "https://docs.google.com/uc?export=open&id=180MUxKJSV4kDrPBjlnO3vMPqKWVC33DA"
     },
@@ -94,7 +87,6 @@
         "category": "기업분석도감",
         "likes": 850,
         "isRead": false,
-        "thumbnail": "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800",
         "fileName": "company_analysis.md"
     },
     {
@@ -106,7 +98,6 @@
         "likes": 0,
         "isRead": false,
         "isNew": true,
-        "thumbnail": "https://images.unsplash.com/photo-1624555130581-1d9cca783bc0?auto=format&fit=crop&q=80&w=800",
         "url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
         "audioUrl": "https://docs.google.com/uc?export=open&id=180MUxKJSV4kDrPBjlnO3vMPqKWVC33DA",
         "fileName": "hybrid_sample.md"

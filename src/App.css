@@ -224,6 +224,14 @@ a {
   border-bottom: none;
 }
 
+.feed-card.no-thumbnail {
+  grid-template-columns: 1fr;
+}
+
+.feed-card.no-thumbnail .feed-card-title {
+  max-width: 1000px;
+}
+
 .feed-card:hover {
   background: rgba(255, 255, 255, 0.03);
 }

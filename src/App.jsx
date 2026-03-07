@@ -143,7 +143,11 @@ const App = () => {
 
               <div className="feed-list glass-card">
                 {filteredPosts.length > 0 ? filteredPosts.map((post) => (
-                  <div key={post.id} className="feed-card" onClick={() => handlePostClick(post)}>
+                  <div
+                    key={post.id}
+                    className={`feed-card ${!post.thumbnail ? 'no-thumbnail' : ''}`}
+                    onClick={() => handlePostClick(post)}
+                  >
                     <div className="feed-card-content">
                       <div className="feed-meta-top">
                         {post.isNew && <span className="badge-new">NEW</span>}
@@ -169,11 +173,13 @@ const App = () => {
                         </span>
                       </div>
                     </div>
-                    <div className="feed-card-thumbnail">
-                      <img src={post.thumbnail} alt={post.title} />
-                      {post.type === 'video' && <PlayCircle className="thumb-play-icon" size={40} />}
-                      {post.type === 'audio' && <Volume2 className="thumb-play-icon" size={40} />}
-                    </div>
+                    {post.thumbnail && (
+                      <div className="feed-card-thumbnail">
+                        <img src={post.thumbnail} alt={post.title} />
+                        {post.type === 'video' && <PlayCircle className="thumb-play-icon" size={40} />}
+                        {post.type === 'audio' && <Volume2 className="thumb-play-icon" size={40} />}
+                      </div>
+                    )}
                   </div>
                 )) : (
                   <div className="empty-state">해당 카테고리의 콘텐츠가 아직 없습니다.</div>
