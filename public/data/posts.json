@@ -1,5 +1,50 @@
 [
     {
+        "id": 13,
+        "title": "4화. [기업분석도감] 봄학기 세번째 기업분석도감이 도착했습니다!",
+        "time": "방금 전",
+        "type": "text",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_13.md"
+    },
+    {
+        "id": 12,
+        "title": "841화. 🙋 3월7일 담쌤의 언제나 데이트",
+        "time": "방금 전",
+        "type": "text",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_12.md"
+    },
+    {
+        "id": 11,
+        "title": "7화. [학급반장과 자율학습] 분산투자는 어떻게 하는 걸까요? 담쌤의 기업 얼개로 이해하기",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_11.md"
+    },
+    {
+        "id": 10,
+        "title": "473화. 🌞 3월 6일 금요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "text",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "audioUrl": "https://drive.google.com/file/d/1Va-vLvEom7VlB6r6cF4QIts0YfV2lwiM",
+        "fileName": "briefing_10.md"
+    },
+    {
         "id": 9,
         "title": "840화. 🙋 3월 5일 담쌤의 언제나 데이트ㅣ핵심은 얼개를 보고 어떤기업에 오래 투자하느냐 입니다",
         "time": "방금 전",

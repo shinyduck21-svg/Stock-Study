@@ -13,9 +13,11 @@ import {
   ArrowLeft,
   ExternalLink,
   BookOpen,
-  LayoutGrid
+  LayoutGrid,
+  PlusCircle
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import TurndownService from 'turndown';
 import './App.css';
 
 const App = () => {
@@ -25,6 +27,9 @@ const App = () => {
   const [selectedPost, setSelectedPost] = useState(null);
   const [markdownContent, setMarkdownContent] = useState('');
   const [posts, setPosts] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newPost, setNewPost] = useState({ title: '', category: '언제나 데이트', type: 'text', content: '', url: '', audioUrl: '' });
+  const [isSaving, setIsSaving] = useState(false);
 
   // 카테고리 정의
   const categories = [
@@ -72,6 +77,50 @@ const App = () => {
   const handleBackToFeed = () => {
     setViewMode('feed');
     setSelectedPost(null);
+  };
+
+  const handleAddPost = async () => {
+    if (!newPost.title.trim()) return;
+
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/add-post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newPost),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        // Update local state
+        setPosts([result.post, ...posts]);
+        // Open the new post immediately
+        setSelectedPost(result.post);
+        setViewMode('detail');
+        setIsModalOpen(false);
+        setNewPost({ title: '', category: '언제나 데이트', type: 'text', content: '', url: '', audioUrl: '' });
+      }
+    } catch (err) {
+      console.error('Failed to add post:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handlePaste = (e) => {
+    const html = e.clipboardData.getData('text/html');
+    if (html) {
+      e.preventDefault();
+      const turndownService = new TurndownService({
+        headingStyle: 'atx',
+        codeBlockStyle: 'fenced'
+      });
+      // Optionally add plugins if needed, but basic turndown is usually enough
+      const markdown = turndownService.turndown(html);
+
+      // Insert into content at current cursor position or just append
+      setNewPost({ ...newPost, content: newPost.content + markdown });
+    }
   };
 
   // 마크다운 파일 로드 로직
@@ -127,6 +176,12 @@ const App = () => {
                 <ChevronRight size={18} />
               </div>
             ))}
+          </div>
+
+          <div className="write-btn-container">
+            <button className="write-btn" onClick={() => setIsModalOpen(true)}>
+              <PlusCircle size={20} /> 새 페이지 추가
+            </button>
           </div>
         </aside>
 
@@ -260,6 +315,91 @@ const App = () => {
           <a href="#"><MessageCircle size={20} /> 커뮤니티 참여</a>
         </div>
       </footer>
+
+      {/* Write Modal */}
+      {isModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content glass-card">
+            <div className="modal-header">
+              <h3 className="modal-title">새 페이지 추가</h3>
+              <button className="close-btn" onClick={() => setIsModalOpen(false)}>
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">제목</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="제목을 입력하세요"
+                value={newPost.title}
+                onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">카테고리</label>
+              <select
+                className="form-select"
+                value={newPost.category}
+                onChange={(e) => setNewPost({ ...newPost, category: e.target.value })}
+              >
+                {categories.filter(c => c.id !== 'all').map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.title}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">내용 (마크다운 지원)</label>
+              <textarea
+                className="form-textarea"
+                placeholder="내용을 입력하세요 (예: # 제목, - 리스트)"
+                value={newPost.content}
+                onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
+                onPaste={handlePaste}
+                rows={6}
+              ></textarea>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group flex-1">
+                <label className="form-label">영상 링크 (YouTube/Drive)</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="https://..."
+                  value={newPost.url}
+                  onChange={(e) => setNewPost({ ...newPost, url: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group flex-1">
+                <label className="form-label">오디오 링크 (Drive)</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="https://..."
+                  value={newPost.audioUrl}
+                  onChange={(e) => setNewPost({ ...newPost, audioUrl: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setIsModalOpen(false)}>취소</button>
+              <button
+                className="btn-primary"
+                onClick={handleAddPost}
+                disabled={isSaving || !newPost.title.trim()}
+              >
+                {isSaving ? '생성 중...' : '페이지 생성'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

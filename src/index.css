@@ -1,19 +1,23 @@
 :root {
-  /* 색상 팔레트 (HSL 기반 - 프리미엄 다크 모드) */
-  --bg-main: 220 20% 6%;
-  --bg-card: 220 20% 10%;
-  --bg-glass: 220 20% 12% / 0.7;
-  
-  --text-main: 220 10% 90%;
-  --text-muted: 220 10% 60%;
-  
-  --primary: 160 80% 45%; /* 에메랄드 그린 (성장 상징) */
-  --primary-glow: 160 80% 45% / 0.3;
-  --secondary: 210 100% 60%; /* 스카이 블루 (신뢰 상징) */
-  
-  --border: 220 20% 15%;
-  --glass-blur: 12px;
-  
+  /* 색상 팔레트 (HSL 기반 - 클린 라이트 모드) */
+  --bg-main: 0 0% 100%;
+  --bg-card: 0 0% 100%;
+  --bg-glass: 0 0% 100% / 0.8;
+
+  --text-main: 220 20% 15%;
+  /* 짙은 네이비/차콜 */
+  --text-muted: 220 10% 45%;
+
+  --primary: 160 80% 35%;
+  /* 에메랄드 그린 - 가독성을 위해 살짝 어둡게 */
+  --primary-glow: 160 80% 45% / 0.1;
+  --secondary: 210 90% 45%;
+  /* 스카이 블루 */
+
+  --border: 220 15% 94%;
+  /* 아주 연한 테두리 */
+  --glass-blur: 8px;
+
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -45,12 +49,14 @@ body {
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid hsl(var(--border));
   border-radius: 16px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.05);
+  /* 밝은 테마에 맞게 약하게 */
 }
 
 .gradient-text {
   background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 800;
 }
