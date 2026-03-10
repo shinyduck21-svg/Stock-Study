@@ -1,5 +1,39 @@
 [
     {
+        "id": 19,
+        "title": "846화. 🙋 3월 10일 담쌤의 언제나 데이트ㅣ삼성전자 8700만주 소각, 시장이 주목한 삼성생명",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_19.md"
+    },
+    {
+        "id": 18,
+        "title": "845화. 🙋 3월 10일 담쌤의 언제나 데이트ㅣ한산도의 밤처럼, 오늘도 수급을 살피는 이유",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_18.md"
+    },
+    {
+        "id": 17,
+        "title": "475화. 🌞 3월 10일 화요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_17.md",
+        "audioUrl": "https://drive.google.com/file/d/1dZCCmCbMVxXAZCrw8KF7sGLY7sBksfP0/view?usp=drive_link"
+    },
+    {
         "id": 16,
         "title": "844화. 🙋 3월 10일 담쌤의 언제나 데이트ㅣ트럼프 ‘전쟁 사실상 끝났다’…중동 긴장 완화 신호",
         "time": "방금 전",
