@@ -239,14 +239,16 @@
         "audioUrl": "https://docs.google.com/uc?export=open&id=180MUxKJSV4kDrPBjlnO3vMPqKWVC33DA"
     },
     {
-        "id": 4,
-        "title": "글 기업분석도감: 2차 전지 핵심 기업 리서치",
-        "time": "1일 전",
-        "type": "text",
+        "id": 24,
+        "title": "봄학기 오리엔테이션 수업 및 봄학기 1회차 수업안내",
+        "time": "방금 전",
+        "type": "video",
         "category": "기업분석도감",
-        "likes": 850,
+        "likes": 0,
         "isRead": false,
-        "fileName": "company_analysis.md"
+        "isNew": true,
+        "fileName": "briefing_24.md",
+        "url": "https://drive.google.com/file/d/1OiLkrxW3r4bU9Ah3SItzlseEut-uoNnQ/preview"
     },
     {
         "id": 5,
