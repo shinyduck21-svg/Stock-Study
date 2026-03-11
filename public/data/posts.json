@@ -1,5 +1,51 @@
 [
     {
+        "id": 23,
+        "title": "848화. 🙋 3월 11일 담쌤의 언제나 데이트ㅣ오라클랠리의 의미, 반도체와 코스피 다시 숨을 쉬다",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_23.md"
+    },
+    {
+        "id": 22,
+        "title": "477화. 🌞 3월 11일 수요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_22.md",
+        "audioUrl": "https://drive.google.com/file/d/1po__xn5pZam_8Jh-8-yWXUmuiRMNBEtz"
+    },
+    {
+        "id": 21,
+        "title": "847화. 🙋 3월 11일 담쌤의 언제나 데이트ㅣ오라클 실적발표 함께보기",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_21.md"
+    },
+    {
+        "id": 20,
+        "title": "3월 9일(월) 3회차 라이브 수업 녹화본",
+        "time": "방금 전",
+        "type": "video",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_20.md",
+        "url": "https://drive.google.com/file/d/1MZEhV-0jiNWEABQtB1FNRPME6IxmE1RC/preview"
+    },
+    {
         "id": 19,
         "title": "846화. 🙋 3월 10일 담쌤의 언제나 데이트ㅣ삼성전자 8700만주 소각, 시장이 주목한 삼성생명",
         "time": "방금 전",

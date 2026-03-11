@@ -43,7 +43,12 @@ export default defineConfig({
 
                 // Add optional media links if provided
                 if (newPostData.url && newPostData.url.trim()) {
-                  finalPost.url = newPostData.url.trim();
+                  let videoUrl = newPostData.url.trim();
+                  // Transform Google Drive view links to preview
+                  if (videoUrl.includes('drive.google.com') && videoUrl.includes('/view')) {
+                    videoUrl = videoUrl.replace(/\/view(\?.*)?$/, '/preview');
+                  }
+                  finalPost.url = videoUrl;
                   finalPost.type = 'video'; // Auto-detect video type if URL is present
                 }
 
