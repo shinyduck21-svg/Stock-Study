@@ -1,5 +1,28 @@
 [
     {
+        "id": 26,
+        "title": "849화. 🙋 3월 12일 담쌤의 언제나 데이트ㅣ삼성전자 레포트(KB증권) 함께보기",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_26.md"
+    },
+    {
+        "id": 25,
+        "title": "478화. 🌞 3월 12일 목요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_25.md",
+        "audioUrl": "https://drive.google.com/file/d/137yRLhYu3K0ijWCNGUV7Ag-zQ_MDqu2S"
+    },
+    {
         "id": 23,
         "title": "848화. 🙋 3월 11일 담쌤의 언제나 데이트ㅣ오라클랠리의 의미, 반도체와 코스피 다시 숨을 쉬다",
         "time": "방금 전",
