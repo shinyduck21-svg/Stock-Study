@@ -1,5 +1,38 @@
 [
     {
+        "id": 30,
+        "title": "852화. 🙋 3월 14일 담쌤의 언제나 데이트ㅣ주말에 전하는 제 인생이야기 입니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_30.md"
+    },
+    {
+        "id": 29,
+        "title": "851화. 🙋 3월 14일 담쌤의 언제나 데이트ㅣ지나가야하고, 지나갈 것 입니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_28.md"
+    },
+    {
+        "id": 28,
+        "title": "850화. 🙋 3월 14일 담쌤의 언제나 데이트ㅣ어려운 구간을 급우님들과 함께 지나고 있습니다",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_29.md"
+    },
+    {
         "id": 27,
         "title": "479화. 🌞 3월 13일 금요일 굿모닝 담쌤",
         "time": "방금 전",
