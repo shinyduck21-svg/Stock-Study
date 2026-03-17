@@ -1,5 +1,39 @@
 [
     {
+        "id": 38,
+        "title": "8화. [학급반장에게 무엇이든 물어보세요] '서재형의 투자학교 학교생활 길라잡이'를 확인해주세요",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_38.md"
+    },
+    {
+        "id": 37,
+        "title": "856화. 🙋 3월 17일 담쌤의 언제나 데이트ㅣ제가 존경하는 두 위인 이야기를 해볼까 합니다",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_37.md"
+    },
+    {
+        "id": 36,
+        "title": "481화. 🌞 3월 17일 화요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_36.md",
+        "audioUrl": "https://drive.google.com/file/d/108KiaHAYuh9FcifL1p7efh1AWn62C-sB"
+    },
+    {
         "id": 35,
         "title": "855화. 🙋 3월16일 담쌤의 언제나 데이트",
         "time": "방금 전",
