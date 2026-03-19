@@ -1,5 +1,96 @@
 [
     {
+        "id": 46,
+        "title": "3월 16일(월) 4회차 라이브 수업 녹화본",
+        "time": "방금 전",
+        "type": "video",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_46.md",
+        "url": "https://drive.google.com/file/d/1NWxiIhmunwJnsmEsD86pXFH9pySAF22L/preview"
+    },
+    {
+        "id": 45,
+        "title": "483화. 🌞 3월 19일 목요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_45.md",
+        "audioUrl": "https://drive.google.com/file/d/1ao286Mb-E979P_BTHYeWW33_K6zXxhuA"
+    },
+    {
+        "id": 44,
+        "title": "861화. 🙋 3월 19일 담쌤의 언제나 데이트ㅣ마이크론 테크놀로지 실적발표 함께보기",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_44.md"
+    },
+    {
+        "id": 43,
+        "title": "860화. 🙋 3월 18일 담쌤의 언제나 데이트ㅣ미사일이 아닌 봄바람이 시장을 바꿉니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_43.md"
+    },
+    {
+        "id": 42,
+        "title": "859화. 🙋 3월 18일 담쌤의 언제나 데이트 | 천시불여지리, 지리불여인화",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_42.md"
+    },
+    {
+        "id": 41,
+        "title": "858화. 🙋 3월 18일 담쌤의 언제나 데이트ㅣ기분좋은 오후입니다 급우여러분",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_41.md"
+    },
+    {
+        "id": 40,
+        "title": "857화. 🙋 3월 18일 담쌤의 언제나 데이트ㅣ함께 버텨낸 2주 반, 다시 숨을 고르는 시장",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_40.md"
+    },
+    {
+        "id": 39,
+        "title": "482화. 🌞 3월 18일 수요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_39.md",
+        "audioUrl": "https://drive.google.com/file/d/1ao286Mb-E979P_BTHYeWW33_K6zXxhuA"
+    },
+    {
         "id": 38,
         "title": "8화. [학급반장에게 무엇이든 물어보세요] '서재형의 투자학교 학교생활 길라잡이'를 확인해주세요",
         "time": "방금 전",
