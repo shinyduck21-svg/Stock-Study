@@ -1,5 +1,62 @@
 [
     {
+        "id": 59,
+        "title": "871화. 🙋 3월24 일 담쌤의 언제나 데이트",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_59.md"
+    },
+    {
+        "id": 58,
+        "title": "870화. 🙋 3월 24일 담쌤의 언제나 데이트",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_58.md"
+    },
+    {
+        "id": 57,
+        "title": "869화. 🙋 3월 24일 담쌤의 언제나 데이트ㅣ호실적인데 조정받는 기업, 숫자로 본 반도체 산업",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_57.md"
+    },
+    {
+        "id": 56,
+        "title": "486화. 🌞 3월 24일 화요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_56.md",
+        "audioUrl": "https://drive.google.com/file/d/1pYORz7JvvDvNxugW1S9dUWawt4nRoImM"
+    },
+    {
+        "id": 55,
+        "title": "VOD 3월 23일(월) 5회차 라이브 수업 녹화본",
+        "time": "방금 전",
+        "type": "video",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_55.md",
+        "url": "https://drive.google.com/file/d/1bcLhRGHk66e_uyC4A8tP5OE-3m5EaACe/preview"
+    },
+    {
         "id": 54,
         "title": "868화. 🙋 3월23일 담쌤의 언제나 데이트",
         "time": "방금 전",
@@ -31,7 +88,7 @@
         "isRead": false,
         "isNew": true,
         "fileName": "briefing_52.md",
-        "audioUrl": "https://drive.google.com/file/d/1NpSBC_X9i2P3fBTlhmNscc2G7VyS_jpJ"
+        "audioUrl": "https://drive.google.com/file/d/16AOXEQ-487qt0kuZoDAlD6A50N9NwFGR"
     },
     {
         "id": 51,
