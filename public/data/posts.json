@@ -1,5 +1,73 @@
 [
     {
+        "id": 69,
+        "title": "878화. 🙋 3월 27일 담쌤의 언제나 데이트ㅣ우리에게 필요한 것은 시간과 펀더멘탈을 판별하는 눈",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_69.md"
+    },
+    {
+        "id": 68,
+        "title": "877화. 🙋 3월 27일 담쌤의 언제나 데이트ㅣ지금은 세고취하의 시간, 기준을 지킬 때입니다",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_68.md"
+    },
+    {
+        "id": 67,
+        "title": "489화. 🌞 3월 27일 금요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_67.md",
+        "audioUrl": "https://drive.google.com/file/d/1KIdalR87ZdTZn0eZKYuZLA6PyuUVn-w5"
+    },
+    {
+        "id": 66,
+        "title": "876화. 🙋 3월 26일 담쌤의 언제나 데이트 | 터보퀀트 관련 글로벌 리서치 견해는?",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_66.md"
+    },
+    {
+        "id": 65,
+        "title": "875화. 🙋 3월 26일 담쌤의 언제나 데이트 | 구글 '터보퀀트' 를 자세히 살펴봅시다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_65.md"
+    },
+    {
+        "id": 64,
+        "title": "488화. 🌞 3월 26일 목요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_64.md",
+        "audioUrl": "https://drive.google.com/file/d/1KIdalR87ZdTZn0eZKYuZLA6PyuUVn-w5"
+    },
+    {
         "id": 63,
         "title": "874화. 🙋 3월25 일 담쌤의 언제나 데이트",
         "time": "방금 전",
