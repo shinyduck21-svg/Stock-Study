@@ -1,15 +1,37 @@
 [
     {
-        "id": 72,
-        "title": "491화. 🌞 3월 31일 화요일 굿모닝 담 화요일 굿모닝 담쌤",
+        "id": 75,
+        "title": "491화. 🌞 3월 31일 월요일 굿모닝 담쌤",
         "time": "방금 전",
         "type": "audio",
-        "category": "언제나 데이트",
+        "category": "굿모닝 담샘",
         "likes": 0,
         "isRead": false,
         "isNew": true,
         "fileName": "briefing_72.md",
         "audioUrl": "https://drive.google.com/file/d/1uGOHUHfp9YRi_UEQE3ROptvfyr1460e4"
+    },
+    {
+        "id": 74,
+        "title": "883화. 🙋 3월 30일 담쌤의 언제나 데이트ㅣ이 시장속, 각자의 적정편입비중은 어떻게 될까요?",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_74.md"
+    },
+    {
+        "id": 73,
+        "title": "882화. 🙋 3월 30일 담쌤의 언제나 데이트ㅣ불확실한 전황, 유가를 유심히 보셔야합니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_73.md"
     },
     {
         "id": 71,
