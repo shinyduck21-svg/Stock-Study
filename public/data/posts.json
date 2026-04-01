@@ -1,5 +1,61 @@
 [
     {
+        "id": 80,
+        "title": "11화. [학급반장과 자율학습] 26년 1분기 실적발표, 학습기업 일정과 함께 보는 핵심 기준은?",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_80.md"
+    },
+    {
+        "id": 79,
+        "title": "886화. 🙋4월 1일 담쌤의 언제나 데이트ㅣ개화도, 믿음도, 주가도 모두가 다 시간이 필요합니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_79.md"
+    },
+    {
+        "id": 78,
+        "title": "885화. 🙋4월 1일 담쌤의 언제나 데이트ㅣ4월의 첫날, 보충학습 드립니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_78.md"
+    },
+    {
+        "id": 77,
+        "title": "884화. 🙋4월 1일 담쌤의 언제나 데이트ㅣ많은 분들에게 희망이 솟아나는 사월이 되길 희망합니다",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_77.md"
+    },
+    {
+        "id": 76,
+        "title": "492화. 🌞 4월 1일 수요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_76.md",
+        "audioUrl": "https://drive.google.com/file/d/1z2sMZfLwIR5t2Ha5y0SPOumUF2XYVXQ7"
+    },
+    {
         "id": 75,
         "title": "491화. 🌞 3월 31일 월요일 굿모닝 담쌤",
         "time": "방금 전",
