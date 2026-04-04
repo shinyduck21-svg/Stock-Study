@@ -1,5 +1,106 @@
 [
     {
+        "id": 90,
+        "title": "14화. [학급반장과 자율학습] 글로벌 시장이 쉬어가는 오늘, 우리를 다시 한번 돌아봅니다",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_90.md"
+    },
+    {
+        "id": 89,
+        "title": "892화. 🙋 4월 3일 담쌤의 언제나 데이트ㅣ곧 마감될 이번주 시장, 오후시장 한바퀴",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_89.md"
+    },
+    {
+        "id": 88,
+        "title": "891화. 🙋 4월 3일 담쌤의 언제나 데이트ㅣ다음 봄은, 올해 봄과는 다르길 바라봅니다",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_88.md"
+    },
+    {
+        "id": 87,
+        "title": "890화. 🙋 4월 3일 담쌤의 언제나 데이트ㅣ한 바구니에 담겨지기 시작한 메모리 기업들",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_87.md"
+    },
+    {
+        "id": 86,
+        "title": "494화. 🌞 4월 3일 금요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_86.md",
+        "audioUrl": "https://drive.google.com/file/d/1LZREEZWqI3OgCygzUgXeGHbDReiwthSy"
+    },
+    {
+        "id": 85,
+        "title": "889화. 🙋 4월 2일 담쌤의 언제나 데이트 ㅣ급우님들, 뉴스는 지나가고 실적은 남습니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_85.md"
+    },
+    {
+        "id": 84,
+        "title": "888화. 🙋 4월 2일 담쌤의 언제나 데이트ㅣ냉정함 잃지 마시고, 스스로 사랑하기를 멈추지 마세요",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_84.md"
+    },
+    {
+        "id": 83,
+        "title": "887화. 🙋 4월 2일 담쌤의 언제나 데이트ㅣ트럼프 대국민 연설 관련 뉴스 함께보기",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_83.md"
+    },
+    {
+        "id": 82,
+        "title": "493화. 🌞 4월 2일 목요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_82.md",
+        "audioUrl": "https://drive.google.com/file/d/1yCWKcq7OgU9nJvtojdvkiWKwbZz8MBYZ"
+    },
+    {
         "id": 81,
         "title": "3월 30일(월) 6회차 라이브 수업 녹화본",
         "time": "방금 전",
