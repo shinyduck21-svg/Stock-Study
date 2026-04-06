@@ -1,5 +1,28 @@
 [
     {
+        "id": 92,
+        "title": "495화. 🌞 4월 6일 월요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_92.md",
+        "audioUrl": "https://drive.google.com/file/d/1J2SBQNZ4hlBH6DPOdrTVO-R5Zqef3oyG"
+    },
+    {
+        "id": 91,
+        "title": "893화. 🙋 4월 4일 담쌤의 언제나 데이트ㅣ주말레포트 작업을 마치고..",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_91.md"
+    },
+    {
         "id": 90,
         "title": "14화. [학급반장과 자율학습] 글로벌 시장이 쉬어가는 오늘, 우리를 다시 한번 돌아봅니다",
         "time": "방금 전",
