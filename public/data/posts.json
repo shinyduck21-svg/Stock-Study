@@ -1,5 +1,51 @@
 [
     {
+        "id": 96,
+        "title": "895화. 🙋 4월 7일 담쌤의 언제나 데이트ㅣ실적은 나왔고, 시장은 답을 기다립니다",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_96.md"
+    },
+    {
+        "id": 95,
+        "title": "894화. 🙋 4월 7일 담쌤의 언제나 데이트ㅣ삼성전자 잠정실적 함께보기",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_95.md"
+    },
+    {
+        "id": 94,
+        "title": "495화. 🌞 4월 7일 화요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_94.md",
+        "audioUrl": "https://drive.google.com/file/d/1UDwkbhLgQBpGr7WZ6RKOjlG0juHQSK4W"
+    },
+    {
+        "id": 93,
+        "title": "4월 6일(월) 7회차 라이브 수업 녹화본",
+        "time": "방금 전",
+        "type": "video",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_93.md",
+        "url": "https://drive.google.com/file/d/10QrsKmPkINKgnmVkjq-uMSQjkmvfG5VF/preview"
+    },
+    {
         "id": 92,
         "title": "495화. 🌞 4월 6일 월요일 굿모닝 담쌤",
         "time": "방금 전",
