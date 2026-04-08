@@ -1,5 +1,94 @@
 [
     {
+        "id": 104,
+        "title": "905화. 🙋 4월 8일 담쌤의 언제나 데이트 | 메모리시장, 얼마나 커질까요?",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_104.md"
+    },
+    {
+        "id": 103,
+        "title": "904화. 🙋 4월 8일 담쌤의 언제나 데이트ㅣ봄을 함께 견뎌낸 우리에게, 작은 보답을 드립니다..",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_103.md"
+    },
+    {
+        "id": 102,
+        "title": "900화. 🙋 4월 8일 담쌤의 언제나 데이트ㅣ지난 변동성 속에서 걸러진 것들, 그리고 남은 것들",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_102.md"
+    },
+    {
+        "id": 101,
+        "title": "899화. 🙋 4월 8일 담쌤의 언제나 데이트ㅣ옥석을 가려 반드시 버티셔야 합니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_101.md"
+    },
+    {
+        "id": 100,
+        "title": "898화. 🙋 4월 8일 담쌤의 언제나 데이트ㅣ버텨낸 5주 4일, 그리고 찾아온 숨 고르기",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_100.md"
+    },
+    {
+        "id": 99,
+        "title": "897화. 🙋 4월 8일 담쌤의 언제나 데이트ㅣ휴전관련 속보 전달드립니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_99.md"
+    },
+    {
+        "id": 98,
+        "title": "896화. 🙋 4월 8일 담쌤의 언제나 데이트 | 삼성전자 실적공시",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_98.md"
+    },
+    {
+        "id": 97,
+        "title": "497화. 🌞 4월 8일 수요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_97.md",
+        "audioUrl": "https://drive.google.com/file/d/1CyU9JV8LWw8nn9SGWCb8n2PsQ2IrHGgg"
+    },
+    {
         "id": 96,
         "title": "895화. 🙋 4월 7일 담쌤의 언제나 데이트ㅣ실적은 나왔고, 시장은 답을 기다립니다",
         "time": "방금 전",
