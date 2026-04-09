@@ -1,5 +1,39 @@
 [
     {
+        "id": 107,
+        "title": "15화. [학급반장과 자율학습] 외국인 수급 변화, 시장을 읽는 올바른 기준은 무엇일까요?",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_107.md"
+    },
+    {
+        "id": 106,
+        "title": "906화. 🙋 4월9일 담쌤의 언제나 데이트ㅣ봄비 내리는 오후, 우리시장 한 바퀴",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_106.md"
+    },
+    {
+        "id": 105,
+        "title": "498화. 🌞 4월 9일 목요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_105.md",
+        "audioUrl": "https://drive.google.com/file/d/1RNFNSl7Y4vAkEchRCYfT7jCIR19JGPUr"
+    },
+    {
         "id": 104,
         "title": "905화. 🙋 4월 8일 담쌤의 언제나 데이트 | 메모리시장, 얼마나 커질까요?",
         "time": "방금 전",
