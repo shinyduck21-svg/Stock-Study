@@ -1,5 +1,72 @@
 [
     {
+        "id": 121,
+        "title": "915화. 🙋 4월14일 담쌤의 언제나 데이트ㅣ산골에 핀 야생화 처럼, 늘 급우님 옆에 있으렵니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_121.md"
+    },
+    {
+        "id": 120,
+        "title": "914화. 🙋 4월 14일 담쌤의 언제나 데이트ㅣ우리민족의 착한 피와 투자 본능 사이에서..",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_120.md"
+    },
+    {
+        "id": 119,
+        "title": "913화. 🙋 4월 14일 담쌤의 언제나 데이트ㅣ오늘 인사는 안녕하십니까보단, 사랑합니다 입니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_119.md"
+    },
+    {
+        "id": 118,
+        "title": "501화. 🌞 4월 14일 화요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_118.md",
+        "audioUrl": "https://drive.google.com/file/d/12Oi_hOTLFxn3TtNpe8wcoFPykBOi8LpI"
+    },
+    {
+        "id": 117,
+        "title": "912화. 🙋 4월 13일 담쌤의 언제나 데이트ㅣ“매도할 궁리”만 해서는 안됩니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_117.md"
+    },
+    {
+        "id": 116,
+        "title": "911화. 🙋 4월 13일 담쌤의 언제나 데이트ㅣ산맥의 정상에서 숲을 보고 나무를 보셔야 합니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_116.md"
+    },
+    {
         "id": 108,
         "title": "500화. 🌞 4월 13일 월요일 굿모닝 담쌤",
         "time": "방금 전",
@@ -9,6 +76,84 @@
         "isRead": false,
         "isNew": true,
         "fileName": "briefing_108.md",
+        "audioUrl": "https://drive.google.com/file/d/1F-Kpd3_sbM3AfOtcyxGTWhFMGYmGn_Ee"
+    },
+    {
+        "id": 115,
+        "title": "910화. 🙋 4월 12일 담쌤의 언제나 데이트ㅣ저에게 주어진 이 길을 감사히 걸어갑니다..",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_115.md"
+    },
+    {
+        "id": 114,
+        "title": "10화. [기업분석도감] 봄학기 여덟번째 기업분석도감이 도착했습니다!",
+        "time": "방금 전",
+        "type": "text",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_114.md"
+    },
+    {
+        "id": 113,
+        "title": "909화. 🙋 4월 11일 담쌤의 언제나 데이트ㅣ한 주를 마무리하며 행복가득한 주말되시길..",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_113.md"
+    },
+    {
+        "id": 112,
+        "title": "908화. 🙋 4월 10일 담쌤의 언제나 데이트ㅣ금요일 밤 청해드리는 데이트입니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_112.md"
+    },
+    {
+        "id": 111,
+        "title": "17화. [학급반장과 자율학습] 반도체, 이제는 경기민감주가 아닌 ‘구조 산업’으로",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_111.md"
+    },
+    {
+        "id": 110,
+        "title": "907화. 🙋 4월 10일 담쌤의 언제나 데이트ㅣ리스크 관리하는 방법을 알아봅시다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_110.md"
+    },
+    {
+        "id": 109,
+        "title": "499화. 🌞 4월 10일 금요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_109.md",
         "audioUrl": "https://drive.google.com/file/d/1F-Kpd3_sbM3AfOtcyxGTWhFMGYmGn_Ee"
     },
     {
