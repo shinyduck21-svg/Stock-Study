@@ -1,5 +1,73 @@
 [
     {
+        "id": 128,
+        "title": "503화. 🌞 4월 16일 목요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_128.md",
+        "audioUrl": "https://drive.google.com/file/d/1SPDplBKC1U4QTRTOX6BNbIJVxwKzjp1K"
+    },
+    {
+        "id": 127,
+        "title": "918화. 🙋 4월 15일 담쌤의 언제나 데이트ㅣ늦은 저녁 찾아뵙는 데이트입니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_127.md"
+    },
+    {
+        "id": 126,
+        "title": "18화. [학급반장의 즉문즉답] 정규수업 녹화본 시청, 더 효율적으로 활용하는 방법 안내드립니다",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_126.md"
+    },
+    {
+        "id": 125,
+        "title": "917화. 🙋 4월 15일 담쌤의 언제나 데이트ㅣ늘어나는 반도체 수요, 얼개를 함께 공부해봅시다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_125.md"
+    },
+    {
+        "id": 124,
+        "title": "916화. 🙋 4월 15일 담쌤의 언제나 데이트ㅣ우리 급우님들 몰라몰라.. 행복한 아침입니다..",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_124.md"
+    },
+    {
+        "id": 123,
+        "title": "502화. 🌞 4월 15일 수요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_123.md",
+        "audioUrl": "https://drive.google.com/file/d/1xNcCAeVwfZrY__VjiK4tJGnUxAKRiTHS"
+    },
+    {
         "id": 122,
         "title": "4월 13일(월) 8회차 라이브 수업 녹화본",
         "time": "방금 전",
