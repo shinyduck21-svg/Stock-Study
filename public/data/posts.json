@@ -1,5 +1,73 @@
 [
     {
+        "id": 143,
+        "title": "4월 20일(월) 9회차 라이브 수업 녹화본",
+        "time": "방금 전",
+        "type": "video",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_143.md",
+        "url": "https://drive.google.com/file/d/1hTujfcn2tQse2V4shCrK1tS2dkGKwlv"
+    },
+    {
+        "id": 142,
+        "title": "928화. 🙋 4월 21일 담쌤의 언제나 데이트ㅣ쌀쌀한 봄날 저녁, 노래 데이트 한 곡청해드립니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_142.md"
+    },
+    {
+        "id": 141,
+        "title": "927화. 🙋 4월 21일 담쌤의 언제나 데이트ㅣ박스피 넘어선 시장, 우리는 어떻게 바라봐야 할까요",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_141.md"
+    },
+    {
+        "id": 140,
+        "title": "926화. 🙋 4월 21일 담쌤의 언제나 데이트ㅣ아마존 / 마벨 테크놀로지에 기업개요 함께보기",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_140.md"
+    },
+    {
+        "id": 139,
+        "title": "506화. 🌞 4월 21일 화요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_139.md",
+        "audioUrl": "https://drive.google.com/file/d/1Imuexf3qS0hZWzvCU_zZU1cwElGjij-C"
+    },
+    {
+        "id": 138,
+        "title": "925화. 🙋 4월 20일 담쌤의 언제나 데이트ㅣ시간을 견디며 부가 쌓이는 경험을 해보시길 바랍니다",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_138.md"
+    },
+    {
         "id": 137,
         "title": "505화. 🌞 4월 20일 월요일 굿모닝 담쌤",
         "time": "방금 전",
