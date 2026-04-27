@@ -1,5 +1,73 @@
 [
     {
+        "id": 158,
+        "title": "510화. 🌞 4월 27일 월요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_158.md",
+        "audioUrl": "https://drive.google.com/file/d/1qL9goxUjXl4ajx8UudzOHaU59-sEKaBY"
+    },
+    {
+        "id": 157,
+        "title": "12화. [기업분석도감] 봄학기 열번째 기업분석도감이 도착했습니다!",
+        "time": "방금 전",
+        "type": "text",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_157.md"
+    },
+    {
+        "id": 156,
+        "title": "936화. 🙋 4월 25일 담쌤의 언제나 데이트ㅣ일요레포트작업 마치고 찾아뵙는 데이트 입니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_156.md"
+    },
+    {
+        "id": 155,
+        "title": "935화. 🙋 4월 24일 담쌤의 언제나 데이트ㅣ오늘도 미장은 하드웨어>소프트웨어의 모습입니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_155.md"
+    },
+    {
+        "id": 154,
+        "title": "934화. 🙋 4월 24일 담쌤의 언제나 ㅣ우리시장 마감에 우리 급우님들 찾아뵙는 데이트입니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_154.md"
+    },
+    {
+        "id": 153,
+        "title": "509화. 🌞 4월 24일 금요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_153.md",
+        "audioUrl": "https://drive.google.com/file/d/1EhCe_JrDbOf4Z3t59Wb3EI6St45dkSpm"
+    },
+    {
         "id": 152,
         "title": "20화. [학급반장 통신문] 스크랩 기능, 어떻게 활용하면 좋을까요?",
         "time": "방금 전",
