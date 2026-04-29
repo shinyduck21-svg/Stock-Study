@@ -1,5 +1,61 @@
 [
     {
+        "id": 168,
+        "title": "22화. [학급안내] 투자학교 기업분석도감 전과집 관련 안내를 드립니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_168.md"
+    },
+    {
+        "id": 167,
+        "title": "941화. 🙋 4월 29일 담쌤의 언제나 데이트ㅣ시간외 상승중인 샌디스크, 함께 공부하기",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_167.md"
+    },
+    {
+        "id": 166,
+        "title": "512화. 🌞 4월 29일 수요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_166.md",
+        "audioUrl": "https://drive.google.com/file/d/1VbYlZSekZDlyR2lCw2Jnv6sHTKfhR1VM"
+    },
+    {
+        "id": 165,
+        "title": "940화. 🙋 4월 28일 담쌤의 언제나 데이트ㅣ시장의 편견을 분할분할의 시간으로",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_165.md"
+    },
+    {
+        "id": 164,
+        "title": "939화. 🙋 4월 28일 담쌤의 언제나 데이트ㅣ숫자가 맞을려면 근본원인을 파악해야합니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_164.md"
+    },
+    {
         "id": 163,
         "title": "511화. 🌞 4월 28일 화요일 굿모닝 담쌤",
         "time": "방금 전",
