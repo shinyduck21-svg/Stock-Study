@@ -1,5 +1,61 @@
 [
     {
+        "id": 173,
+        "title": "946화. 🙋 4월30 일 담쌤의 언제나 데이트 | 오늘, 꼭 기억해야할 숫자가 있습니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_173.md"
+    },
+    {
+        "id": 172,
+        "title": "945화. 🙋 4월30일 담쌤의 언제나 데이트 | 빅테크 4개사의 컨퍼런스콜, 가이던스 최종 정리",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_172.md"
+    },
+    {
+        "id": 171,
+        "title": "513화. 🌞 4월 30일 목요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_171.md",
+        "audioUrl": "https://drive.google.com/file/d/11xR2JQI3Yb_-s0Ty-VikZKHGsG0WyhiO"
+    },
+    {
+        "id": 170,
+        "title": "943화. 🙋 4월 30일 담쌤의 언제나 데이트 | 빅테크 4개사의 자본적지출 전망 알아보기",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_170.md"
+    },
+    {
+        "id": 169,
+        "title": "942화. 🙋 4월 30일 담쌤의 언제나 데이트 | 빅테크 4개사 실적발표 함께 공부하기",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_169.md"
+    },
+    {
         "id": 168,
         "title": "22화. [학급안내] 투자학교 기업분석도감 전과집 관련 안내를 드립니다.",
         "time": "방금 전",
