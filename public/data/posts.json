@@ -1,5 +1,39 @@
 [
     {
+        "id": 194,
+        "title": "517화. 🌞 5월 7일 목요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_194.md",
+        "audioUrl": "https://drive.google.com/file/d/1zqrOm2ysm6B5pP7OurxCqRhPrhjkvGO"
+    },
+    {
+        "id": 193,
+        "title": "961화. 🙋 5월7일 담쌤의 언제나 데이트",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_193.md"
+    },
+    {
+        "id": 192,
+        "title": "960화. 🙋 5월 6일 담쌤의 언제나 데이트",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_192.md"
+    },
+    {
         "id": 191,
         "title": "959화. 🙋 5월 6일 담쌤의 언제나 데이트ㅣ오늘 우리시장을 돌아보고, 글로벌시장을 준비합시다",
         "time": "방금 전",
