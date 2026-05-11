@@ -1,5 +1,117 @@
 [
     {
+        "id": 204,
+        "title": "968화. 🙋 5월11일 담쌤의 언제나 데이트",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_204.md"
+    },
+    {
+        "id": 203,
+        "title": "967화. 🙋 5월 11일 담쌤의 언제나 데이트",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_203.md"
+    },
+    {
+        "id": 202,
+        "title": "519화. 🌞 5월 11일 월요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_202.md",
+        "audioUrl": "https://drive.google.com/file/d/101tvvANddv-LP9z9qGMy82HdAwsqGjPD"
+    },
+    {
+        "id": 201,
+        "title": "14화. [기업분석도감] 봄학기 열두번째 기업분석도감이 도착했습니다!",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_201.md"
+    },
+    {
+        "id": 200,
+        "title": "966화. 🙋 5월 9일 담쌤의 언제나 데이트ㅣ이 대전환의 자산시장에서, 속도감있게 대응해야 합니다",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_200.md"
+    },
+    {
+        "id": 199,
+        "title": "965화. 🙋 5월 9일 담쌤의 언제나 데이트ㅣ단순히 주가가 올랐다고 버블이 아닙니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_199.md"
+    },
+    {
+        "id": 198,
+        "title": "964화. 🙋 5월 8일 담쌤의 언제나 데이트ㅣ단기 트레이딩 아이디어보다 중요한 것은 따로있습니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_198.md"
+    },
+    {
+        "id": 197,
+        "title": "27화. [학급반장 통신문] 6/6 총동창회, 어떻게 신청하나요?",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_197.md"
+    },
+    {
+        "id": 196,
+        "title": "963화. 🙋 5월 8일 담쌤의 언제나 데이트ㅣ어버이날 청해드리는 데이트입니다.",
+        "time": "방금 전",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_196.md"
+    },
+    {
+        "id": 195,
+        "title": "518화. 🌞 5월 8일 금요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_195.md",
+        "audioUrl": "https://drive.google.com/file/d/1I3k1g0V-n4Nfd8H_O-edOALJOXWLUB9m"
+    },
+    {
         "id": 194,
         "title": "517화. 🌞 5월 7일 목요일 굿모닝 담쌤",
         "time": "방금 전",
