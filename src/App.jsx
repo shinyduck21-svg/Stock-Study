@@ -27,6 +27,7 @@ const App = () => {
   const [selectedPost, setSelectedPost] = useState(null);
   const [markdownContent, setMarkdownContent] = useState('');
   const [posts, setPosts] = useState([]);
+  const [readPostIds, setReadPostIds] = useState([]); // 읽은 게시글 ID 목록
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPost, setNewPost] = useState({ title: '', category: '언제나 데이트', type: 'text', content: '', url: '', audioUrl: '' });
   const [isSaving, setIsSaving] = useState(false);
@@ -49,22 +50,60 @@ const App = () => {
     return null;
   };
 
-  // JSON 데이터 로드
+  // JSON 데이터 및 로컬 저장소 로드
   useEffect(() => {
     fetch('./data/posts.json')
       .then(res => res.json())
       .then(data => setPosts(data))
       .catch(err => console.error('Error fetching posts:', err));
+
+    // 로컬 저장소에서 읽은 글 목록 불러오기
+    const savedReadPosts = localStorage.getItem('readPostIds');
+    if (savedReadPosts) {
+      setReadPostIds(JSON.parse(savedReadPosts));
+    }
   }, []);
 
   const filteredPosts = activeCategory === 'all'
     ? posts
     : posts.filter(post => post.category === activeCategory);
 
+  // 브라우저 히스토리 (뒤로가기) 지원
+  useEffect(() => {
+    const handlePopState = (event) => {
+      if (event.state) {
+        setViewMode(event.state.viewMode || 'feed');
+        setSelectedPost(event.state.selectedPost || null);
+        setActiveCategory(event.state.activeCategory || 'all');
+      } else {
+        setViewMode('feed');
+        setSelectedPost(null);
+        setActiveCategory('all');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const handlePostClick = (post) => {
     setSelectedPost(post);
     setViewMode('detail');
     window.scrollTo(0, 0);
+    
+    // 읽음 처리 추가
+    if (!readPostIds.includes(post.id)) {
+      const newReadPosts = [...readPostIds, post.id];
+      setReadPostIds(newReadPosts);
+      localStorage.setItem('readPostIds', JSON.stringify(newReadPosts));
+    }
+
+    // 히스토리 추가
+    window.history.pushState(
+      { viewMode: 'detail', selectedPost: post, activeCategory: activeCategory },
+      '',
+      `#post-${post.id}`
+    );
   };
 
   const handleCategoryClick = (catId) => {
@@ -72,11 +111,23 @@ const App = () => {
     setViewMode('feed');
     setSelectedPost(null);
     window.scrollTo(0, 0);
+
+    // 히스토리 추가
+    window.history.pushState(
+      { viewMode: 'feed', selectedPost: null, activeCategory: catId },
+      '',
+      catId === 'all' ? '#' : `#category-${catId}`
+    );
   };
 
   const handleBackToFeed = () => {
     setViewMode('feed');
     setSelectedPost(null);
+    window.history.pushState(
+      { viewMode: 'feed', selectedPost: null, activeCategory: activeCategory },
+      '',
+      activeCategory === 'all' ? '#' : `#category-${activeCategory}`
+    );
   };
 
   const handleAddPost = async () => {
@@ -95,8 +146,7 @@ const App = () => {
         // Update local state
         setPosts([result.post, ...posts]);
         // Open the new post immediately
-        setSelectedPost(result.post);
-        setViewMode('detail');
+        handlePostClick(result.post);
         setIsModalOpen(false);
         setNewPost({ title: '', category: '언제나 데이트', type: 'text', content: '', url: '', audioUrl: '' });
       }
@@ -161,21 +211,50 @@ const App = () => {
       <main className="main-content-layout">
         {/* Left Sidebar - Re-implemented as requested */}
         <aside className="sidebar-section glass-card desktop-only">
-          <h2 className="section-title">카테고리</h2>
-          <div className="list-items">
-            {categories.map((cat) => (
-              <div
-                key={cat.id}
-                className={`list-item ${activeCategory === cat.id ? 'selected' : ''}`}
-                onClick={() => handleCategoryClick(cat.id)}
-              >
-                <div className="item-info">
-                  {cat.icon}
-                  <span className="item-title">{cat.title}</span>
+          <div className="sidebar-group">
+            <h2 className="section-title">카테고리</h2>
+            <div className="list-items">
+              {categories.map((cat) => (
+                <div
+                  key={cat.id}
+                  className={`list-item ${activeCategory === cat.id ? 'selected' : ''}`}
+                  onClick={() => handleCategoryClick(cat.id)}
+                >
+                  <div className="item-info">
+                    {cat.icon}
+                    <span className="item-title">{cat.title}</span>
+                  </div>
+                  <ChevronRight size={18} />
                 </div>
-                <ChevronRight size={18} />
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+
+          <div className="sidebar-group post-list-group">
+            <h2 className="section-title">학습 목록</h2>
+            <div className="sidebar-post-list">
+              {filteredPosts.length > 0 ? (
+                filteredPosts.map((post) => (
+                  <div
+                    key={post.id}
+                    className={`sidebar-post-item ${selectedPost?.id === post.id ? 'active' : ''} ${readPostIds.includes(post.id) ? 'is-read' : ''}`}
+                    onClick={() => handlePostClick(post)}
+                  >
+                    <div className="post-item-type">
+                      {post.type === 'video' && <PlayCircle size={14} />}
+                      {post.type === 'audio' && <Volume2 size={14} />}
+                      {post.type === 'text' && <FileText size={14} />}
+                    </div>
+                    <div className="post-item-content">
+                      <span className="post-item-title">{post.title}</span>
+                      <span className="post-item-time">{post.time}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="empty-sidebar">글이 없습니다.</div>
+              )}
+            </div>
           </div>
 
           <div className="write-btn-container">
@@ -200,7 +279,7 @@ const App = () => {
                 {filteredPosts.length > 0 ? filteredPosts.map((post) => (
                   <div
                     key={post.id}
-                    className={`feed-card ${!post.thumbnail ? 'no-thumbnail' : ''}`}
+                    className={`feed-card ${!post.thumbnail ? 'no-thumbnail' : ''} ${readPostIds.includes(post.id) ? 'is-read' : ''}`}
                     onClick={() => handlePostClick(post)}
                   >
                     <div className="feed-card-content">
@@ -223,8 +302,8 @@ const App = () => {
                           <Heart size={18} className="heart-icon" />
                           <span>{post.likes}</span>
                         </div>
-                        <span className={`badge-read ${post.isRead ? 'read' : 'unread'}`}>
-                          {post.isRead ? '읽음' : '안읽음'}
+                        <span className={`badge-read ${readPostIds.includes(post.id) ? 'read' : 'unread'}`}>
+                          {readPostIds.includes(post.id) ? '읽음' : '안읽음'}
                         </span>
                       </div>
                     </div>
