@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local Automation Settings & Media
+credentials.json
+token.json
+chrome_profile/
+temp_audio.mp3
+temp_video.mp4
+test_gdrive.py
+
