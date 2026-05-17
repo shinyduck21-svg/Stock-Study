@@ -150,6 +150,12 @@ def scrap_post(post_url):
         # 페이지 이동
         page.goto(post_url)
         
+        # 리다이렉트 대기 (최대 5초 동안 로그인 페이지로 이동하는지 확인)
+        for _ in range(5):
+            if "nid.naver.com" in page.url or "login" in page.url:
+                break
+            page.wait_for_timeout(1000)
+            
         # 만약 로그인 페이지(네이버 등)로 리다이렉트 되었다면 로그인이 완료되어 유료 글 주소로 복귀할 때까지 대기
         if "nid.naver.com" in page.url or "login" in page.url:
             print("\n🔑 로그인이 필요합니다! 열린 크롬 브라우저에서 로그인을 완료해 주세요.")
