@@ -20,7 +20,9 @@ import {
   RotateCcw,
   RotateCw,
   Sun,
-  Moon
+  Moon,
+  Maximize,
+  Minimize
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import TurndownService from 'turndown';
@@ -201,6 +203,261 @@ const PremiumAudioPlayer = ({ url, title, category }) => {
           className="progress-slider"
         />
         <span className="time-display">{formatTime(duration)}</span>
+      </div>
+    </div>
+  );
+};
+
+// 모바일 최적화 프리미엄 비디오 플레이어 (커스텀 오버레이 컨트롤 바 탑재)
+const PremiumVideoPlayer = ({ url, title, category }) => {
+  const videoRef = useRef(null);
+  const containerRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(1.0);
+  const [showControls, setShowControls] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [forceIframe, setForceIframe] = useState(false);
+  const controlsTimeoutRef = useRef(null);
+
+  const getStreamUrl = (u) => {
+    const driveId = getGoogleDriveId(u);
+    if (!driveId) return u;
+    return `https://docs.google.com/uc?export=download&id=${driveId}`;
+  };
+
+  const streamUrl = getStreamUrl(url);
+
+  // 이전에 보던 위치 복원 (이어보기 지원) 및 상태 초기화
+  useEffect(() => {
+    const savedTime = localStorage.getItem(`video-resume-${url}`);
+    if (savedTime && videoRef.current) {
+      videoRef.current.currentTime = parseFloat(savedTime);
+      setCurrentTime(parseFloat(savedTime));
+    } else {
+      setCurrentTime(0);
+    }
+    setIsPlaying(false);
+    setHasError(false);
+    setForceIframe(false);
+  }, [url]);
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      const current = videoRef.current.currentTime;
+      setCurrentTime(current);
+      localStorage.setItem(`video-resume-${url}`, current.toString());
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration || 0);
+    }
+  };
+
+  const togglePlay = (e) => {
+    if (e) e.stopPropagation();
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        videoRef.current.play()
+          .then(() => setIsPlaying(true))
+          .catch(err => console.log("Play failed: ", err));
+      }
+    }
+  };
+
+  const skip = (amount, e) => {
+    if (e) e.stopPropagation();
+    if (videoRef.current) {
+      const nextTime = Math.max(0, Math.min(duration, videoRef.current.currentTime + amount));
+      videoRef.current.currentTime = nextTime;
+      setCurrentTime(nextTime);
+      resetControlsTimeout();
+    }
+  };
+
+  const handleProgressChange = (e) => {
+    if (videoRef.current) {
+      const newTime = parseFloat(e.target.value);
+      videoRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+      resetControlsTimeout();
+    }
+  };
+
+  const handleRateChange = (e) => {
+    if (e) e.stopPropagation();
+    const nextRates = [1.0, 1.25, 1.5, 1.8, 2.0];
+    const currentIndex = nextRates.indexOf(playbackRate);
+    const nextIndex = (currentIndex + 1) % nextRates.length;
+    const nextRate = nextRates[nextIndex];
+    setPlaybackRate(nextRate);
+    if (videoRef.current) {
+      videoRef.current.playbackRate = nextRate;
+    }
+    resetControlsTimeout();
+  };
+
+  const toggleFullscreen = (e) => {
+    if (e) e.stopPropagation();
+    if (!containerRef.current) return;
+    if (!document.fullscreenElement) {
+      containerRef.current.requestFullscreen()
+        .then(() => setIsFullscreen(true))
+        .catch(err => console.log("Fullscreen failed: ", err));
+    } else {
+      document.exitFullscreen()
+        .then(() => setIsFullscreen(false));
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const resetControlsTimeout = () => {
+    setShowControls(true);
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    controlsTimeoutRef.current = setTimeout(() => {
+      if (videoRef.current && !videoRef.current.paused) {
+        setShowControls(false);
+      }
+    }, 3000);
+  };
+
+  useEffect(() => {
+    resetControlsTimeout();
+    return () => {
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    };
+  }, [isPlaying]);
+
+  const formatTime = (time) => {
+    if (isNaN(time) || !isFinite(time)) return '0:00';
+    const mins = Math.floor(time / 60);
+    const secs = Math.floor(time % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  if (forceIframe) {
+    return (
+      <div className="premium-video-player-container glass-card">
+        <iframe
+          src={url}
+          title="Google Drive Video Player (Iframe Fallback)"
+          frameBorder="0"
+          style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        ></iframe>
+      </div>
+    );
+  }
+
+  if (hasError && !forceIframe) {
+    return (
+      <div className="premium-video-player-container error-state glass-card">
+        <div className="player-error-content">
+          <div className="error-icon">⚠️</div>
+          <h3 className="error-title">대용량 영상 스트리밍 안내</h3>
+          <p className="error-desc">
+            이 영상은 100MB를 초과하는 **대용량 수업 녹화본**입니다. 구글 드라이브 보안 정책(대용량 파일 바이러스 검사 경고)으로 인해 네이티브 다이렉트 스트리밍이 제한되었습니다.
+          </p>
+          <div className="error-buttons">
+            <button 
+              onClick={() => window.open(url, '_blank')} 
+              className="btn-primary"
+            >
+              🎬 구글 드라이브 앱으로 시청
+            </button>
+            <button 
+              onClick={() => setForceIframe(true)} 
+              className="btn-secondary"
+            >
+              🔄 현재 화면에서 재생 (기본 플레이어)
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      className="premium-video-player-container glass-card"
+      onMouseMove={resetControlsTimeout}
+      onTouchStart={resetControlsTimeout}
+    >
+      <video
+        ref={videoRef}
+        src={streamUrl}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onClick={togglePlay}
+        onEnded={() => setIsPlaying(false)}
+        onError={(e) => {
+          console.error("Video streaming failed, using fallback:", e);
+          setHasError(true);
+        }}
+        playsInline
+        preload="metadata"
+      />
+
+      {/* Giant touch play overlay */}
+      <div className={`video-overlay-play-btn ${!isPlaying || showControls ? 'visible' : ''}`} onClick={togglePlay}>
+        {isPlaying ? <Pause size={36} fill="white" /> : <Play size={36} fill="white" style={{ marginLeft: '4px' }} />}
+      </div>
+
+      {/* Touch controls bar */}
+      <div className={`video-controls-bar glass-card ${showControls ? 'visible' : 'hidden'}`} onClick={(e) => e.stopPropagation()}>
+        <div className="video-progress-row">
+          <span className="video-time-display">{formatTime(currentTime)}</span>
+          <input
+            type="range"
+            min="0"
+            max={duration || 100}
+            value={currentTime}
+            onChange={handleProgressChange}
+            className="video-progress-slider"
+          />
+          <span className="video-time-display">{formatTime(duration)}</span>
+        </div>
+
+        <div className="video-buttons-row">
+          <div className="video-left-buttons">
+            <button onClick={(e) => skip(-10, e)} className="video-btn" title="10초 뒤로">
+              <RotateCcw size={16} />
+            </button>
+            <button onClick={togglePlay} className="video-btn video-play-toggle">
+              {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+            </button>
+            <button onClick={(e) => skip(10, e)} className="video-btn" title="10초 앞으로">
+              <RotateCw size={16} />
+            </button>
+          </div>
+
+          <div className="video-right-buttons">
+            <button onClick={handleRateChange} className="video-speed-btn">
+              {playbackRate}x
+            </button>
+            <button onClick={toggleFullscreen} className="video-btn">
+              {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -565,15 +822,20 @@ const App = () => {
 
                       {playMode === 'normal' ? (
                         <div className="video-viewer animate-fade-in">
-                          <div className="video-container">
-                            <iframe
-                              key={selectedPost.url}
-                              src={selectedPost.url}
-                              title="Video player"
-                              frameBorder="0"
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                              allowFullScreen
-                            ></iframe>
+                          <PremiumVideoPlayer
+                            url={selectedPost.url}
+                            title={selectedPost.title}
+                            category={selectedPost.category}
+                          />
+                          <div className="alternative-player-link">
+                            <a
+                              href={selectedPost.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="네이티브 플레이어가 잘 안나올 경우 클릭하세요"
+                            >
+                              🎬 구글 드라이브 기본 플레이어(새 창)로 열기
+                            </a>
                           </div>
                         </div>
                       ) : (
