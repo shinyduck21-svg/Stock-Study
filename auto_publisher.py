@@ -377,58 +377,33 @@ def update_site_and_push(media_data):
     with open(posts_path, 'r', encoding='utf-8') as f:
         posts = json.load(f)
         
-    # 동일한 제목의 포스트가 이미 존재하는지 탐색 (업데이트/덮어쓰기 모드)
-    existing_post = None
-    for p in posts:
-        if p.get('title') == media_data['title']:
-            existing_post = p
-            break
+    # 신규 포스트 생성 (중복 체크/덮어쓰기 없이 항상 새 번호를 부여하도록 개편)
+    next_id = max([p['id'] for p in posts]) + 1 if posts else 1
+    post_id = next_id
+    file_name = f"briefing_{next_id}.md"
+    print(f"➕ 신규 포스트를 추가합니다. (ID: {post_id})")
+    
+    new_post = {
+        "id": post_id,
+        "title": media_data['title'],
+        "time": "방금 전",
+        "type": "text",
+        "category": media_data['category'],
+        "likes": 0,
+        "isRead": False,
+        "isNew": True,
+        "fileName": file_name
+    }
+    
+    if media_data['video_url']:
+        new_post['url'] = media_data['video_url']
+        new_post['type'] = 'video'
+    if media_data['audio_url']:
+        new_post['audioUrl'] = media_data['audio_url']
+        if new_post['type'] != 'video':
+            new_post['type'] = 'audio'
             
-    if existing_post:
-        print(f"🔄 이미 동일한 제목의 포스트가 존재합니다. (ID: {existing_post['id']}) - 정보를 업데이트합니다.")
-        post_id = existing_post['id']
-        file_name = existing_post['fileName']
-        
-        # 기존 객체 값 업데이트
-        existing_post['time'] = "방금 전"
-        existing_post['category'] = media_data['category']
-        existing_post['isNew'] = True
-        
-        if media_data['video_url']:
-            existing_post['url'] = media_data['video_url']
-            existing_post['type'] = 'video'
-        if media_data['audio_url']:
-            existing_post['audioUrl'] = media_data['audio_url']
-            if existing_post.get('type') != 'video':
-                existing_post['type'] = 'audio'
-    else:
-        # 신규 포스트 생성 모드
-        next_id = max([p['id'] for p in posts]) + 1 if posts else 1
-        post_id = next_id
-        file_name = f"briefing_{str(next_id).zfill(2)}.md"
-        print(f"➕ 신규 포스트를 추가합니다. (ID: {post_id})")
-        
-        new_post = {
-            "id": post_id,
-            "title": media_data['title'],
-            "time": "방금 전",
-            "type": "text",
-            "category": media_data['category'],
-            "likes": 0,
-            "isRead": False,
-            "isNew": True,
-            "fileName": file_name
-        }
-        
-        if media_data['video_url']:
-            new_post['url'] = media_data['video_url']
-            new_post['type'] = 'video'
-        if media_data['audio_url']:
-            new_post['audioUrl'] = media_data['audio_url']
-            if new_post['type'] != 'video':
-                new_post['type'] = 'audio'
-                
-        posts.insert(0, new_post)
+    posts.insert(0, new_post)
     
     # json 저장
     with open(posts_path, 'w', encoding='utf-8') as f:
@@ -442,12 +417,19 @@ def update_site_and_push(media_data):
         f.write(md_content)
     print(f"{md_path} 생성 완료.")
     
-    # 4. GitHub 자동 푸시
-    print("\n[5단계] GitHub push 진행...")
-    os.system("git add public/data/posts.json public/docs/briefing_*.md")
-    os.system(f'git commit -m "Auto upload: {media_data["title"]}"')
-    os.system("git push origin main")
-    print("🎉 GitHub 배포 완료!")
+    # 4. GitHub 자동 푸시 안내 (로컬 검증용으로 자동 푸시 일시 비활성화)
+    print("\n==================================================")
+    print("💾 [로컬 파일 업데이트 완료]")
+    print("==================================================")
+    print(f"✅ 데이터 반영 완료: {posts_path}")
+    print(f"✅ 마크다운 생성 완료: {md_path}")
+    print("\n🔍 로컬 브라우저에서 사이트가 정상적으로 동작하는지 확인해 주세요.")
+    print("💡 수동으로 검증을 마치신 후, 아래 명령어로 GitHub에 직접 배포하실 수 있습니다:")
+    print("--------------------------------------------------")
+    print("git add public/data/posts.json public/docs/briefing_*.md")
+    print(f'git commit -m "배포: {media_data["title"]}"')
+    print("git push origin main")
+    print("--------------------------------------------------\n")
 
 # ==========================================
 # 🏁 메인 실행부

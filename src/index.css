@@ -1,24 +1,40 @@
 :root {
-  /* 색상 팔레트 (HSL 기반 - 클린 라이트 모드) */
-  --bg-main: 0 0% 100%;
-  --bg-card: 0 0% 100%;
-  --bg-glass: 0 0% 100% / 0.8;
+  /* 색상 팔레트 (HSL 기반 - 프리미엄 라이트 모드 글래스모피즘) */
+  --bg-main: 220 30% 97%; /* 연한 그레이/블루빛 화이트 */
+  --bg-card: 0 0% 100% / 0.65; /* 고투명 백색 유리 */
+  --bg-glass: 0 0% 100% / 0.7;
+  --bg-dark: 220 30% 97%;
 
-  --text-main: 220 20% 15%;
-  /* 짙은 네이비/차콜 */
-  --text-muted: 220 10% 45%;
+  --text-main: 220 25% 15%; /* 짙은 차콜 */
+  --text-muted: 220 15% 45%; /* 부드러운 슬레이트 그레이 */
 
-  --primary: 160 80% 35%;
-  /* 에메랄드 그린 - 가독성을 위해 살짝 어둡게 */
-  --primary-glow: 160 80% 45% / 0.1;
-  --secondary: 210 90% 45%;
-  /* 스카이 블루 */
+  --primary: 160 84% 35%; /* 싱그러운 에메랄드 */
+  --primary-glow: 160 84% 35% / 0.1;
+  --secondary: 199 89% 45%; /* 스카이 블루 */
+  --accent: 326 100% 60%; /* 산뜻한 핑크 */
 
-  --border: 220 15% 94%;
-  /* 아주 연한 테두리 */
-  --glass-blur: 8px;
+  --border: 220 15% 88%; /* 밝고 투명한 테두리 */
+  --glass-blur: 24px;
 
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+html[data-theme='dark'] {
+  /* 색상 팔레트 (HSL 기반 - 프리미엄 다크 모드 글래스모피즘) */
+  --bg-main: 224 71% 4%; /* 깊은 우주 밤청색 */
+  --bg-card: 222 47% 11% / 0.45; /* 투명도 있는 어두운 유리 */
+  --bg-glass: 222 47% 11% / 0.6;
+  --bg-dark: 224 71% 4%;
+
+  --text-main: 210 40% 98%; /* 눈부신 화이트 */
+  --text-muted: 215 20% 65%; /* 부드러운 그레이 */
+
+  --primary: 162 82% 40%; /* 생동감 넘치는 민트그린 */
+  --primary-glow: 162 82% 40% / 0.15;
+  --secondary: 210 100% 50%; /* 차가운 딥 블루 */
+  --accent: 326 100% 60%; /* 강렬한 핫핑크 */
+
+  --border: 217 32% 17% / 0.6; /* 얇은 유리 테두리 */
 }
 
 * {
@@ -29,11 +45,23 @@
 
 body {
   background-color: hsl(var(--bg-main));
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(var(--primary), 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(var(--secondary), 0.05) 0px, transparent 50%);
+  background-attachment: fixed;
   color: hsl(var(--text-main));
   font-family: var(--font-family);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
+html[data-theme='dark'] body {
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(var(--primary), 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(var(--secondary), 0.08) 0px, transparent 50%),
+    radial-gradient(at 50% 0%, hsla(var(--accent), 0.05) 0px, transparent 50%);
 }
 
 #root {
@@ -49,8 +77,8 @@ body {
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid hsl(var(--border));
   border-radius: 16px;
-  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.05);
-  /* 밝은 테마에 맞게 약하게 */
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .gradient-text {
@@ -59,15 +87,35 @@ body {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
 button {
   cursor: pointer;
   border: none;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 a {
   text-decoration: none;
   color: inherit;
+}
+
+/* 글로벌 스크롤바 스타일링 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsla(var(--border), 0.8);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsla(var(--primary), 0.4);
 }

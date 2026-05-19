@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   TrendingUp,
   Menu,
@@ -14,11 +14,197 @@ import {
   ExternalLink,
   BookOpen,
   LayoutGrid,
-  PlusCircle
+  PlusCircle,
+  Play,
+  Pause,
+  RotateCcw,
+  RotateCw,
+  Sun,
+  Moon
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import TurndownService from 'turndown';
 import './App.css';
+
+// 구글 드라이브 ID 추출 유틸리티
+const getGoogleDriveId = (url) => {
+  if (!url) return null;
+  const matchId = url.match(/[?&]id=([^&#]+)/);
+  if (matchId) return matchId[1];
+  const matchFile = url.match(/\/file\/d\/([^/]+)/);
+  if (matchFile) return matchFile[1];
+  return null;
+};
+
+// 모바일 최적화 프리미엄 오디오 플레이어 (Media Session API 탑재)
+const PremiumAudioPlayer = ({ url, title, category }) => {
+  const audioRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(1.0);
+
+  const getStreamUrl = (u) => {
+    const driveId = getGoogleDriveId(u);
+    if (!driveId) return u;
+    // 구글 드라이브 HTML5 직접 스트리밍 및 이어듣기용 다이렉트 주소
+    return `https://docs.google.com/uc?export=download&id=${driveId}`;
+  };
+
+  const streamUrl = getStreamUrl(url);
+
+  // 이전에 듣던 재생 시간 복원 (이어듣기 지원)
+  useEffect(() => {
+    const savedTime = localStorage.getItem(`audio-resume-${url}`);
+    if (savedTime && audioRef.current) {
+      audioRef.current.currentTime = parseFloat(savedTime);
+      setCurrentTime(parseFloat(savedTime));
+    } else {
+      setCurrentTime(0);
+    }
+    setIsPlaying(false);
+  }, [url]);
+
+  // 실시간 재생 시간 및 이력 로컬 저장소 기록
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      const current = audioRef.current.currentTime;
+      setCurrentTime(current);
+      localStorage.setItem(`audio-resume-${url}`, current.toString());
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration || 0);
+    }
+  };
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        audioRef.current.play()
+          .then(() => setIsPlaying(true))
+          .catch(e => console.log("Play failed (interrupted/blocked): ", e));
+      }
+    }
+  };
+
+  const skip = (amount) => {
+    if (audioRef.current) {
+      const nextTime = Math.max(0, Math.min(duration, audioRef.current.currentTime + amount));
+      audioRef.current.currentTime = nextTime;
+      setCurrentTime(nextTime);
+    }
+  };
+
+  const handleProgressChange = (e) => {
+    if (audioRef.current) {
+      const newTime = parseFloat(e.target.value);
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
+  const handleRateChange = () => {
+    const nextRates = [1.0, 1.25, 1.5, 1.8, 2.0];
+    const currentIndex = nextRates.indexOf(playbackRate);
+    const nextIndex = (currentIndex + 1) % nextRates.length;
+    const nextRate = nextRates[nextIndex];
+    setPlaybackRate(nextRate);
+    if (audioRef.current) {
+      audioRef.current.playbackRate = nextRate;
+    }
+  };
+
+  // HTML5 Media Session API 연동 (모바일 잠금화면, 알림창 네이티브 제어 완벽 대응)
+  useEffect(() => {
+    if ('mediaSession' in navigator && audioRef.current) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: title || '음성 브리핑',
+        artist: '서재형의 투자학교',
+        album: category || '데일리 브리핑',
+        artwork: [
+          { src: 'https://resource.us-insight.com/dev/image/png/1728833285070_24a08f79/1728833285070?w=512', sizes: '512x512', type: 'image/png' }
+        ]
+      });
+
+      navigator.mediaSession.setActionHandler('play', () => {
+        audioRef.current.play().then(() => setIsPlaying(true));
+      });
+      navigator.mediaSession.setActionHandler('pause', () => {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      });
+      navigator.mediaSession.setActionHandler('seekbackward', () => skip(-10));
+      navigator.mediaSession.setActionHandler('seekforward', () => skip(10));
+    }
+  }, [url, title, category, duration]);
+
+  const formatTime = (time) => {
+    if (isNaN(time) || !isFinite(time)) return '0:00';
+    const mins = Math.floor(time / 60);
+    const secs = Math.floor(time % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="premium-audio-player glass-card">
+      <audio
+        ref={audioRef}
+        src={streamUrl}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onEnded={() => setIsPlaying(false)}
+        preload="metadata"
+      />
+      
+      <div className="player-info">
+        <div className={`pulse-dot ${isPlaying ? 'active' : ''}`}></div>
+        <div className="player-meta-txt">
+          <span className="player-title">{title}</span>
+          <span className="player-badge">{category}</span>
+        </div>
+      </div>
+
+      <div className="player-controls">
+        <button onClick={() => skip(-10)} className="btn-skip" title="10초 뒤로">
+          <RotateCcw size={20} />
+          <span className="skip-label">10</span>
+        </button>
+
+        <button onClick={togglePlay} className="btn-play-pause">
+          {isPlaying ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" />}
+        </button>
+
+        <button onClick={() => skip(10)} className="btn-skip" title="10초 앞으로">
+          <RotateCw size={20} />
+          <span className="skip-label">10</span>
+        </button>
+
+        <button onClick={handleRateChange} className="btn-speed">
+          {playbackRate}x
+        </button>
+      </div>
+
+      <div className="player-progress-bar">
+        <span className="time-display">{formatTime(currentTime)}</span>
+        <input
+          type="range"
+          min="0"
+          max={duration || 100}
+          value={currentTime}
+          onChange={handleProgressChange}
+          className="progress-slider"
+        />
+        <span className="time-display">{formatTime(duration)}</span>
+      </div>
+    </div>
+  );
+};
 
 const App = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -31,6 +217,14 @@ const App = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPost, setNewPost] = useState({ title: '', category: '언제나 데이트', type: 'text', content: '', url: '', audioUrl: '' });
   const [isSaving, setIsSaving] = useState(false);
+  const [playMode, setPlayMode] = useState('normal'); // 'normal' | 'audio-only' (비디오인 경우 오디오만 백그라운드 재생 지원)
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
 
   // 카테고리 정의
   const categories = [
@@ -68,6 +262,7 @@ const App = () => {
     ? posts
     : posts.filter(post => post.category === activeCategory);
 
+
   // 브라우저 히스토리 (뒤로가기) 지원
   useEffect(() => {
     const handlePopState = (event) => {
@@ -75,10 +270,12 @@ const App = () => {
         setViewMode(event.state.viewMode || 'feed');
         setSelectedPost(event.state.selectedPost || null);
         setActiveCategory(event.state.activeCategory || 'all');
+        setPlayMode('normal');
       } else {
         setViewMode('feed');
         setSelectedPost(null);
         setActiveCategory('all');
+        setPlayMode('normal');
       }
     };
 
@@ -89,6 +286,7 @@ const App = () => {
   const handlePostClick = (post) => {
     setSelectedPost(post);
     setViewMode('detail');
+    setPlayMode('normal');
     window.scrollTo(0, 0);
     
     // 읽음 처리 추가
@@ -110,6 +308,7 @@ const App = () => {
     setActiveCategory(catId);
     setViewMode('feed');
     setSelectedPost(null);
+    setPlayMode('normal');
     window.scrollTo(0, 0);
 
     // 히스토리 추가
@@ -123,6 +322,7 @@ const App = () => {
   const handleBackToFeed = () => {
     setViewMode('feed');
     setSelectedPost(null);
+    setPlayMode('normal');
     window.history.pushState(
       { viewMode: 'feed', selectedPost: null, activeCategory: activeCategory },
       '',
@@ -198,13 +398,20 @@ const App = () => {
             <span className="gradient-text logo-text">위브즈 주식 투자고수방</span>
           </div>
 
-          <div className="nav-links desktop-only">
-            {/* GitHub 링크 제거됨 */}
-          </div>
+          <div className="nav-actions">
+            <button
+              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+              className="theme-toggle-btn"
+              title={theme === 'light' ? '다크 모드로 전환' : '라이트 모드로 전환'}
+              aria-label="화면 테마 변경"
+            >
+              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+            </button>
 
-          <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            {isMenuOpen ? <X /> : <Menu />}
-          </button>
+            <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+              {isMenuOpen ? <X /> : <Menu />}
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -337,39 +544,58 @@ const App = () => {
                 </header>
 
                 <div className="viewer-content">
-                  {/* 영상이 있는 경우 */}
+                  {/* 영상이 있는 경우 (비디오 모드 vs 오디오 전용 모드 토글 지원) */}
                   {selectedPost.url && (
-                    <div className="video-viewer">
-                      <div className="video-container">
-                        <iframe
-                          key={selectedPost.url}
-                          src={selectedPost.url}
-                          title="Video player"
-                          frameBorder="0"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        ></iframe>
+                    <div className="media-section-wrapper">
+                      <div className="viewer-mode-selector glass-card">
+                        <button
+                          className={`mode-btn ${playMode === 'normal' ? 'active' : ''}`}
+                          onClick={() => setPlayMode('normal')}
+                        >
+                          🎬 비디오 플레이어
+                        </button>
+                        <button
+                          className={`mode-btn ${playMode === 'audio-only' ? 'active' : ''}`}
+                          onClick={() => setPlayMode('audio-only')}
+                          title="화면을 끄거나 백그라운드에서도 라디오처럼 들을 수 있습니다."
+                        >
+                          🎧 모바일 오디오 모드 (백그라운드/배속 지원)
+                        </button>
                       </div>
+
+                      {playMode === 'normal' ? (
+                        <div className="video-viewer animate-fade-in">
+                          <div className="video-container">
+                            <iframe
+                              key={selectedPost.url}
+                              src={selectedPost.url}
+                              title="Video player"
+                              frameBorder="0"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            ></iframe>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="audio-viewer-wrapper animate-fade-in">
+                          <PremiumAudioPlayer
+                            url={selectedPost.url}
+                            title={selectedPost.title}
+                            category={selectedPost.category}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {/* 오디오가 있는 경우 */}
+                  {/* 오디오가 있는 경우 (프리미엄 네이티브 HTML5 오디오 제어기로 대체) */}
                   {selectedPost.audioUrl && (
-                    <div className="audio-player-bar glass-card">
-                      <div className="audio-info">
-                        <Volume2 size={20} className="primary-text" />
-                        <span>{selectedPost.category} - 관련 음성 브리핑</span>
-                      </div>
-                      <div className="audio-embed-container">
-                        <iframe
-                          src={`https://drive.google.com/file/d/${getGoogleDriveId(selectedPost.audioUrl)}/preview`}
-                          width="100%"
-                          height="60"
-                          frameBorder="0"
-                          allow="autoplay"
-                          title="Google Drive Audio Player"
-                        ></iframe>
-                      </div>
+                    <div className="audio-viewer-wrapper animate-fade-in">
+                      <PremiumAudioPlayer
+                        url={selectedPost.audioUrl}
+                        title={`${selectedPost.title} (음성 브리핑)`}
+                        category={selectedPost.category}
+                      />
                     </div>
                   )}
 
