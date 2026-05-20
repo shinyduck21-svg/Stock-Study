@@ -914,6 +914,18 @@ a {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
+.audio-drive-preview {
+  width: 100%;
+  min-height: 120px;
+  border: 0;
+  border-radius: 12px;
+  background: hsl(var(--bg-main));
+}
+
+.audio-error-state {
+  align-items: stretch;
+}
+
 /* Play Mode Selector Tabs */
 .viewer-mode-selector {
   display: flex;

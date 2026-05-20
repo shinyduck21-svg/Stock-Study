@@ -45,15 +45,24 @@ const PremiumAudioPlayer = ({ url, title, category }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1.0);
+  const [hasError, setHasError] = useState(false);
+  const [forceIframe, setForceIframe] = useState(false);
 
   const getStreamUrl = (u) => {
     const driveId = getGoogleDriveId(u);
     if (!driveId) return u;
     // 구글 드라이브 HTML5 직접 스트리밍 및 이어듣기용 다이렉트 주소
-    return `https://docs.google.com/uc?export=download&id=${driveId}`;
+    return `https://drive.google.com/uc?export=download&id=${driveId}`;
+  };
+
+  const getPreviewUrl = (u) => {
+    const driveId = getGoogleDriveId(u);
+    if (!driveId) return u;
+    return `https://drive.google.com/file/d/${driveId}/preview`;
   };
 
   const streamUrl = getStreamUrl(url);
+  const previewUrl = getPreviewUrl(url);
 
   // 이전에 듣던 재생 시간 복원 (이어듣기 지원)
   useEffect(() => {
@@ -65,6 +74,8 @@ const PremiumAudioPlayer = ({ url, title, category }) => {
       setCurrentTime(0);
     }
     setIsPlaying(false);
+    setHasError(false);
+    setForceIframe(false);
   }, [url]);
 
   // 실시간 재생 시간 및 이력 로컬 저장소 기록
@@ -90,7 +101,10 @@ const PremiumAudioPlayer = ({ url, title, category }) => {
       } else {
         audioRef.current.play()
           .then(() => setIsPlaying(true))
-          .catch(e => console.log("Play failed (interrupted/blocked): ", e));
+          .catch(e => {
+            console.log("Audio play failed, using fallback: ", e);
+            setHasError(true);
+          });
       }
     }
   };
@@ -153,6 +167,47 @@ const PremiumAudioPlayer = ({ url, title, category }) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  if (forceIframe) {
+    return (
+      <div className="premium-audio-player glass-card">
+        <iframe
+          src={previewUrl}
+          title="Google Drive Audio Player"
+          frameBorder="0"
+          className="audio-drive-preview"
+          allow="autoplay"
+        ></iframe>
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <div className="premium-audio-player audio-error-state glass-card">
+        <div className="player-error-content">
+          <h3 className="error-title">오디오를 바로 재생할 수 없습니다</h3>
+          <p className="error-desc">
+            Google Drive가 직접 스트리밍을 제한하고 있습니다. 같은 화면에서 Drive 기본 플레이어로 재생할 수 있습니다.
+          </p>
+          <div className="error-buttons">
+            <button
+              onClick={() => setForceIframe(true)}
+              className="btn-primary"
+            >
+              현재 화면에서 재생
+            </button>
+            <button
+              onClick={() => window.open(previewUrl, '_blank')}
+              className="btn-secondary"
+            >
+              새 창에서 열기
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="premium-audio-player glass-card">
       <audio
@@ -161,6 +216,10 @@ const PremiumAudioPlayer = ({ url, title, category }) => {
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={() => setIsPlaying(false)}
+        onError={(e) => {
+          console.error("Audio streaming failed, using fallback:", e);
+          setHasError(true);
+        }}
         preload="metadata"
       />
       
