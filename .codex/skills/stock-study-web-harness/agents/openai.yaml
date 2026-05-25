@@ -1,0 +1,3 @@
+display_name: Stock Study Web Harness
+short_description: Debug and ship the Stock-Study React/Vite app safely.
+default_prompt: Use this skill to debug, change, verify, and document Stock-Study web app work.

@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "sync:us-insight": "node scripts/sync-us-insight.mjs",
+    "sync:us-insight:new": "node scripts/sync-us-insight.mjs --since-last",
     "preview": "vite preview"
   },
   "dependencies": {
