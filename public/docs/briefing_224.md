@@ -1,5 +1,3 @@
-![like](https://us-insight.com/contents/icons/heart_gradient.svg)
-
 **\*본 기업분석도감은 5월 26일(화)에 진행될 여름학기 첫번째 정규 라이브 수업인 1회차에 사용될 수업자료와 동일합니다. 본 자료를 활용하여 효과적인 예습과 복습을 권장드립니다.**
 
 안녕하세요 급우님, 학급반장입니다.
@@ -31,4 +29,4 @@
 
 ![pdf files](https://us-insight.com/_next/image?url=%2Fcontents%2Ficons%2FIC_open-folder.png&w=64&q=75)
 
-서재형 투자학교 여름학기 첫번째 기업분석도감.pdf
+서재형 투자학교 여름학기 첫번째 기업분석도감.pdf

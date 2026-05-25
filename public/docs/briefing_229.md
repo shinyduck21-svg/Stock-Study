@@ -1,9 +1,3 @@
-![like](https://us-insight.com/contents/icons/heart_gradient.svg)
-
-  
-
-  
-
 ![](https://contents-resource.us-insight.com/dev/image/png/7cf739a5/1771924881336_7cf739a5__1__X0kKDwKEeKZvWYm3pqZoeKZ3pbn1eI0P?w=1080)
 
 * * *

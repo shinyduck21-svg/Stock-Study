@@ -1,5 +1,3 @@
-![like](https://us-insight.com/contents/icons/heart_gradient.svg)
-
 ![video thumbnail](https://us-insight.com/_next/image?url=https%3A%2F%2Fresource.us-insight.com%2Fprod%2Fcms%2Fpng%2F9e1c9aec-9304-40ae-bdf7-226c730dacc7%2F1779364067360_9e1c9aec-9304-40ae-bdf7-226c730dacc7.png&w=2048&q=75)
 
 ![play button](https://us-insight.com/_next/image?url=%2Fcontents%2Ficons%2FIC_play.png&w=256&q=75)

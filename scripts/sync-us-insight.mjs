@@ -26,6 +26,7 @@ const debug = Boolean(args.debug);
 const force = Boolean(args.force);
 const skipMedia = Boolean(args.skipMedia);
 const gdriveFolderId = args.gdriveFolderId || DEFAULT_GDRIVE_FOLDER_ID;
+const updateIds = parseIdList(args.updateIds || args.updateId || '');
 
 const postsPath = resolve(rootDir, 'public/data/posts.json');
 const docsDir = resolve(rootDir, 'public/docs');
@@ -96,6 +97,13 @@ async function main() {
   }
 
   const posts = readJson(postsPath);
+
+  if (updateIds.length > 0) {
+    await updateExistingPosts({ cdp, posts, ids: updateIds });
+    await cdp.close();
+    return;
+  }
+
   const existingSources = new Set(posts.map((post) => normalizeUrl(post.sourceUrl)).filter(Boolean));
   const existingTitles = new Set(posts.map((post) => normalizeTitle(post.title)).filter(Boolean));
   const targetLinks = selectTargetLinks(links, existingSources);
@@ -192,6 +200,67 @@ const nextIdStart = Math.max(0, ...posts.map((post) => Number(post.id) || 0)) + 
   additions.forEach(({ post }) => console.log(`- #${post.id} ${post.title}`));
 
   await cdp.close();
+}
+
+async function updateExistingPosts({ cdp, posts, ids }) {
+  let updated = 0;
+  for (const id of ids) {
+    const post = posts.find((item) => Number(item.id) === id);
+    if (!post) {
+      console.warn(`Skipped missing post id: ${id}`);
+      continue;
+    }
+    if (!post.sourceUrl) {
+      console.warn(`Skipped post id ${id}: sourceUrl is missing.`);
+      continue;
+    }
+
+    console.log(`Updating #${id}: ${post.sourceUrl}`);
+    const item = await scrapeContent(cdp, post.sourceUrl, post.title);
+    if (debug) {
+      console.log(`Scraped title="${item.title}" markdownLength=${item.markdown.length} media=${item.media.length}`);
+      if (!item.markdown) console.log(`Text sample: ${item.text?.slice(0, 500) || ''}`);
+    }
+    if (!item.markdown) {
+      console.warn(`Skipped post id ${id}: scraped markdown was empty.`);
+      continue;
+    }
+
+    if (item.title) post.title = item.title;
+    post.time = '방금 전';
+    const postType = detectType({
+      ...item,
+      driveAudioUrl: post.audioUrl,
+      driveVideoUrl: post.url,
+    });
+    post.type = postType;
+    post.category = classifyCategory(item, postType, post.category);
+    writeFileSync(resolve(docsDir, post.fileName), buildMarkdown(item), 'utf8');
+    updated += 1;
+  }
+
+  if (!dryRun && updated > 0) {
+    writeFileSync(postsPath, `${JSON.stringify(posts, null, 4)}\n`, 'utf8');
+  }
+  console.log(`${dryRun ? 'Dry run: ' : ''}Updated ${updated} existing posts.`);
+}
+
+function parseIdList(value) {
+  if (!value) return [];
+  const ids = [];
+  for (const part of String(value).split(',')) {
+    const trimmed = part.trim();
+    const range = trimmed.match(/^(\d+)-(\d+)$/);
+    if (range) {
+      const start = Number(range[1]);
+      const end = Number(range[2]);
+      for (let id = start; id <= end; id += 1) ids.push(id);
+      continue;
+    }
+    const id = Number(trimmed);
+    if (Number.isFinite(id)) ids.push(id);
+  }
+  return [...new Set(ids)];
 }
 
 function selectTargetLinks(links, existingSources) {
@@ -407,6 +476,8 @@ async function scrapeContent(cdp, url, fallbackTitle = '') {
   await cdp.send('Page.navigate', { url });
   await waitForPage(cdp);
   await autoScroll(cdp);
+  const transcriptOpened = await openTranscriptIfAvailable(cdp);
+  if (debug && transcriptOpened) console.log('Opened transcript panel.');
 
   const data = await evaluate(cdp, (fallbackTitleText) => {
     const bodyText = document.body?.innerText || '';
@@ -619,6 +690,7 @@ async function scrapeContent(cdp, url, fallbackTitle = '') {
       const wrapper = document.createElement('div');
       wrapper.appendChild(range.cloneContents());
       normalizeImages(wrapper);
+      removeAudioPlayerControls(wrapper);
       removeNoise(wrapper);
       removeMetaLines(wrapper);
       removeTitleLikeNodes(wrapper);
@@ -705,6 +777,25 @@ async function scrapeContent(cdp, url, fallbackTitle = '') {
         .replace(/(?:^|<br\s*\/?>)\s*\d{1,6}\s*(?=<br\s*\/?>|$)/g, '');
     }
 
+    function removeAudioPlayerControls(root) {
+      const playerImagePattern = /IC_(?:skip|rewind|AudioPlay|forward)|speedometer\.svg/i;
+      const playerTextPattern = /^(?:\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}|속도\s*\([^)]*\)|스크립트\s*보기\s*Beta)$/i;
+
+      Array.from(root.querySelectorAll('img')).forEach((img) => {
+        const src = img.getAttribute('src') || '';
+        const alt = img.getAttribute('alt') || '';
+        if (playerImagePattern.test(src) || /skip|rewind|play\/pause|forward|speed/i.test(alt)) {
+          img.remove();
+        }
+      });
+
+      Array.from(root.querySelectorAll('h1,h2,h3,h4,p,div,span,strong,b,button')).forEach((node) => {
+        if (node.querySelector('img, video, audio, iframe')) return;
+        const text = clean(node.innerText || node.textContent || '');
+        if (playerTextPattern.test(text)) node.remove();
+      });
+    }
+
     function removeTitleLikeNodes(root) {
       const episodePattern = new RegExp('^\\d+\\s*\\uD654\\.\\s+');
       Array.from(root.querySelectorAll('h1,h2,h3,h4,p,div,span,strong,b')).forEach((node) => {
@@ -776,6 +867,35 @@ async function scrapeContent(cdp, url, fallbackTitle = '') {
   };
 }
 
+async function openTranscriptIfAvailable(cdp) {
+  const result = await evaluate(cdp, () => {
+    const candidates = Array.from(document.querySelectorAll('button, [role="button"], a, div, span'))
+      .filter((node) => /스크립트\s*보기|script/i.test((node.innerText || node.textContent || '').replace(/\s+/g, ' ').trim()))
+      .map((node) => {
+        const rect = node.getBoundingClientRect();
+        return {
+          node,
+          text: (node.innerText || node.textContent || '').replace(/\s+/g, ' ').trim(),
+          visible: rect.width > 0 && rect.height > 0,
+          area: rect.width * rect.height,
+        };
+      })
+      .filter((item) => item.visible)
+      .sort((a, b) => a.area - b.area);
+
+    const target = candidates[0]?.node;
+    if (!target) return false;
+    target.scrollIntoView({ block: 'center', inline: 'center' });
+    target.click();
+    return true;
+  });
+
+  if (!result) return false;
+  await delay(2500);
+  await autoScroll(cdp);
+  return true;
+}
+
 function buildMarkdown(item) {
   return `${item.markdown}`.trimEnd() + '\n';
 }
@@ -789,6 +909,11 @@ function cleanupTitle(title) {
 
 function cleanupMarkdown(markdown) {
   return String(markdown || '')
+    .replace(/^\s*\d{1,2}:\d{2}\\?-\d{1,2}:\d{2}\s*$/gm, '')
+    .replace(/^!\[[^\]]*(?:skip to start|rewind|play\/pause|forward|speed)[^\]]*\]\([^)]+\)\s*$/gim, '')
+    .replace(/^!\[[^\]]*\]\([^)]*(?:IC_(?:skip|rewind|AudioPlay|forward)|speedometer\.svg)[^)]*\)\s*$/gim, '')
+    .replace(/^\s*속도\s*\([^)]*\)\s*$/gm, '')
+    .replace(/^\s*스크립트\s*보기\s*Beta\s*$/gm, '')
     .replace(/\n{3,}/g, '\n\n')
     .replace(/^\s*(login|sign up|notification|menu|NAVER)\s*$/gim, '')
     .trim();

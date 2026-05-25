@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  TrendingUp,
   Menu,
   X,
   Github,
@@ -710,8 +709,8 @@ const App = () => {
       <nav className="navbar glass-card">
         <div className="nav-content">
           <div className="logo-section" onClick={() => handleCategoryClick('all')}>
-            <TrendingUp size={32} className="logo-icon" />
-            <span className="gradient-text logo-text">위브즈 주식 투자고수방</span>
+            <img src="./assets/stock-gosu-app-icon.png" alt="" className="app-logo-image" />
+            <span className="gradient-text logo-text">주식 투자 고수방</span>
           </div>
 
           <div className="nav-actions">
@@ -936,7 +935,7 @@ const App = () => {
       </main>
 
       <footer className="footer glass-card">
-        <p>© 2026 위브즈 주식 투자고수방. All rights reserved.</p>
+        <p>© 2026 주식 투자 고수방. All rights reserved.</p>
         <div className="footer-links">
           <a href="#"><MessageCircle size={20} /> 커뮤니티 참여</a>
         </div>

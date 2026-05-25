@@ -1,0 +1,18 @@
+{
+  "name": "주식 투자 고수방",
+  "short_name": "투자 고수방",
+  "description": "주식 투자 학습 콘텐츠 웹앱",
+  "start_url": "/Stock-Study/",
+  "scope": "/Stock-Study/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/Stock-Study/assets/stock-gosu-app-icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

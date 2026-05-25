@@ -1,19 +1,3 @@
-![like](https://us-insight.com/contents/icons/heart_gradient.svg)
-
-0:00\-35:25
-
-![skip to start](https://us-insight.com/_next/image?url=%2Fcontents%2Ficons%2FIC_skip-1.png&w=96&q=75)![rewind 15 sec](https://us-insight.com/_next/image?url=%2Fcontents%2Ficons%2FIC_rewind.png&w=96&q=75)![play/pause toggle button](https://us-insight.com/_next/image?url=%2Fcontents%2Ficons%2FIC_AudioPlay.png&w=96&q=75)![forward 15sec](https://us-insight.com/_next/image?url=%2Fcontents%2Ficons%2FIC_forward.png&w=96&q=75)
-
-![speed](https://us-insight.com/contents/icons/speedometer.svg)
-
-속도(1x)
-
-![play/pause toggle button](https://us-insight.com/_next/image?url=%2Fcontents%2Ficons%2FIC_AudioPlay.png&w=96&q=75)
-
-0:00\-35:25
-
-스크립트 보기Beta
-
 ![](https://resource.us-insight.com/dev/image/png/1728833285070_24a08f79/1728833285070?w=1080)
 
 ![](https://contents-resource.us-insight.com/dev/image/jpeg/098b4d5d/1753653837541_098b4d5d__4.90191__M/gRCoKodqd4iPhnz5um+Oc?w=1080)

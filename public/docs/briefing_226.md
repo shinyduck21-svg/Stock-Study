@@ -1,5 +1,3 @@
-![like](https://us-insight.com/contents/icons/heart_gradient.svg)
-
 ![](https://contents-resource.us-insight.com/dev/image/png/59cfc30f/1769647723683_59cfc30f__0.96__JzkGBwDpaHePi4Zodslnp3h4mQO0Bk8C?w=1080)
 
 5.22일 아침 언제나 데이트입니다..
