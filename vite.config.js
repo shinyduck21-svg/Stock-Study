@@ -33,6 +33,7 @@ export default defineConfig({
                   id: nextId,
                   title: newPostData.title,
                   time: '방금 전',
+                  term: newPostData.term || '26년 봄학기',
                   type: newPostData.type || 'text',
                   category: newPostData.category,
                   likes: 0,

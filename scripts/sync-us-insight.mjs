@@ -10,6 +10,7 @@ const rootDir = resolve(__dirname, '..');
 
 const DEFAULT_SOURCE = 'https://us-insight.com/club/13/contents?type=all';
 const DEFAULT_CATEGORY = 'US Insight';
+const DEFAULT_TERM = '26년 봄학기';
 const DEFAULT_PROFILE_DIR = resolve(rootDir, 'chrome_profile');
 const DEFAULT_PORT = 9222;
 const DEFAULT_GDRIVE_FOLDER_ID = '1v9H6SxCxIelFLW_nfDkOYjZFX3t_3nNC';
@@ -19,6 +20,7 @@ const sourceUrl = args.source || DEFAULT_SOURCE;
 const allNew = Boolean(args.sinceLast || args.allNew || args.new);
 const limit = allNew && !args.limit ? Number.POSITIVE_INFINITY : Number.parseInt(args.limit || '10', 10);
 const category = args.category || DEFAULT_CATEGORY;
+const term = args.term || DEFAULT_TERM;
 const profileDir = resolve(rootDir, args.profileDir || DEFAULT_PROFILE_DIR);
 const port = Number.parseInt(args.port || String(DEFAULT_PORT), 10);
 const dryRun = Boolean(args.dryRun);
@@ -164,6 +166,7 @@ const nextIdStart = Math.max(0, ...posts.map((post) => Number(post.id) || 0)) + 
       id,
       title: item.title,
       time: '방금 전',
+      term,
       type: postType,
       category: classifyCategory(item, postType, category),
       likes: 0,
@@ -228,6 +231,7 @@ async function updateExistingPosts({ cdp, posts, ids }) {
 
     if (item.title) post.title = item.title;
     post.time = '방금 전';
+    post.term = post.term || term;
     const postType = detectType({
       ...item,
       driveAudioUrl: post.audioUrl,

@@ -524,13 +524,15 @@ const PremiumVideoPlayer = ({ url, title, category }) => {
 const App = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [viewMode, setViewMode] = useState('feed'); // 'feed' | 'detail'
+  const defaultTerm = '26년 봄학기';
+  const [activeTerm, setActiveTerm] = useState(defaultTerm);
   const [activeCategory, setActiveCategory] = useState('all');
   const [selectedPost, setSelectedPost] = useState(null);
   const [markdownContent, setMarkdownContent] = useState('');
   const [posts, setPosts] = useState([]);
   const [readPostIds, setReadPostIds] = useState([]); // 읽은 게시글 ID 목록
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newPost, setNewPost] = useState({ title: '', category: '언제나 데이트', type: 'text', content: '', url: '', audioUrl: '' });
+  const [newPost, setNewPost] = useState({ title: '', term: defaultTerm, category: '언제나 데이트', type: 'text', content: '', url: '', audioUrl: '' });
   const [isSaving, setIsSaving] = useState(false);
   const [playMode, setPlayMode] = useState('normal'); // 'normal' | 'audio-only' (비디오인 경우 오디오만 백그라운드 재생 지원)
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
@@ -542,12 +544,21 @@ const App = () => {
 
 
   // 카테고리 정의
-  const categories = [
-    { id: 'all', title: '전체 피드', icon: <LayoutGrid size={20} /> },
-    { id: '언제나 데이트', title: '언제나 데이트', icon: <PlayCircle size={20} /> },
-    { id: '굿모닝 담샘', title: '굿모닝 담샘', icon: <Volume2 size={20} /> },
-    { id: '기업분석도감', title: '기업분석도감', icon: <BookOpen size={20} /> }
+  const terms = [
+    { id: '개나리반', title: '개나리반', icon: <BookOpen size={20} />, categories: [] },
+    { id: '26년 봄학기', title: '26년 봄학기', icon: <LayoutGrid size={20} />, categories: ['언제나 데이트', '굿모닝 담샘', '기업분석도감'] },
+    { id: '26년 여름학기', title: '26년 여름학기', icon: <LayoutGrid size={20} />, categories: ['언제나 데이트', '굿모닝 담샘', '기업분석도감'] }
   ];
+
+  const categoryMeta = {
+    all: { id: 'all', title: '전체', icon: <LayoutGrid size={18} /> },
+    '언제나 데이트': { id: '언제나 데이트', title: '언제나 데이트', icon: <PlayCircle size={18} /> },
+    '굿모닝 담샘': { id: '굿모닝 담샘', title: '굿모닝 담샘', icon: <Volume2 size={18} /> },
+    '기업분석도감': { id: '기업분석도감', title: '기업분석도감', icon: <BookOpen size={18} /> }
+  };
+
+  const getPostTerm = (post) => post.term || defaultTerm;
+  const getTermCategories = (termId) => terms.find(term => term.id === termId)?.categories || [];
 
   // 구글 드라이브 ID 추출 유틸리티
   const getGoogleDriveId = (url) => {
@@ -573,9 +584,16 @@ const App = () => {
     }
   }, []);
 
-  const filteredPosts = activeCategory === 'all'
-    ? posts
-    : posts.filter(post => post.category === activeCategory);
+  const filteredPosts = posts.filter(post => {
+    if (getPostTerm(post) !== activeTerm) return false;
+    if (activeCategory !== 'all' && post.category !== activeCategory) return false;
+    return true;
+  });
+
+  const activeTermInfo = terms.find(term => term.id === activeTerm);
+  const activeCategoryTitle = activeCategory === 'all'
+    ? `${activeTermInfo?.title || activeTerm} 전체`
+    : `${activeTermInfo?.title || activeTerm} · ${categoryMeta[activeCategory]?.title || activeCategory}`;
 
 
   // 브라우저 히스토리 (뒤로가기) 지원
@@ -584,11 +602,13 @@ const App = () => {
       if (event.state) {
         setViewMode(event.state.viewMode || 'feed');
         setSelectedPost(event.state.selectedPost || null);
+        setActiveTerm(event.state.activeTerm || defaultTerm);
         setActiveCategory(event.state.activeCategory || 'all');
         setPlayMode('normal');
       } else {
         setViewMode('feed');
         setSelectedPost(null);
+        setActiveTerm(defaultTerm);
         setActiveCategory('all');
         setPlayMode('normal');
       }
@@ -613,13 +633,29 @@ const App = () => {
 
     // 히스토리 추가
     window.history.pushState(
-      { viewMode: 'detail', selectedPost: post, activeCategory: activeCategory },
+      { viewMode: 'detail', selectedPost: post, activeTerm: activeTerm, activeCategory: activeCategory },
       '',
       `#post-${post.id}`
     );
   };
 
-  const handleCategoryClick = (catId) => {
+  const handleTermClick = (termId) => {
+    setActiveTerm(termId);
+    setActiveCategory('all');
+    setViewMode('feed');
+    setSelectedPost(null);
+    setPlayMode('normal');
+    window.scrollTo(0, 0);
+
+    window.history.pushState(
+      { viewMode: 'feed', selectedPost: null, activeTerm: termId, activeCategory: 'all' },
+      '',
+      `#term-${encodeURIComponent(termId)}`
+    );
+  };
+
+  const handleCategoryClick = (catId, termId = activeTerm) => {
+    setActiveTerm(termId);
     setActiveCategory(catId);
     setViewMode('feed');
     setSelectedPost(null);
@@ -628,9 +664,9 @@ const App = () => {
 
     // 히스토리 추가
     window.history.pushState(
-      { viewMode: 'feed', selectedPost: null, activeCategory: catId },
+      { viewMode: 'feed', selectedPost: null, activeTerm: termId, activeCategory: catId },
       '',
-      catId === 'all' ? '#' : `#category-${catId}`
+      `#term-${encodeURIComponent(termId)}${catId === 'all' ? '' : `-${encodeURIComponent(catId)}`}`
     );
   };
 
@@ -639,10 +675,19 @@ const App = () => {
     setSelectedPost(null);
     setPlayMode('normal');
     window.history.pushState(
-      { viewMode: 'feed', selectedPost: null, activeCategory: activeCategory },
+      { viewMode: 'feed', selectedPost: null, activeTerm: activeTerm, activeCategory: activeCategory },
       '',
-      activeCategory === 'all' ? '#' : `#category-${activeCategory}`
+      `#term-${encodeURIComponent(activeTerm)}${activeCategory === 'all' ? '' : `-${encodeURIComponent(activeCategory)}`}`
     );
+  };
+
+  const handleNewPostTermChange = (termId) => {
+    const nextCategories = getTermCategories(termId);
+    setNewPost({
+      ...newPost,
+      term: termId,
+      category: nextCategories.includes(newPost.category) ? newPost.category : (nextCategories[0] || '언제나 데이트')
+    });
   };
 
   const handleAddPost = async () => {
@@ -663,7 +708,7 @@ const App = () => {
         // Open the new post immediately
         handlePostClick(result.post);
         setIsModalOpen(false);
-        setNewPost({ title: '', category: '언제나 데이트', type: 'text', content: '', url: '', audioUrl: '' });
+        setNewPost({ title: '', term: defaultTerm, category: '언제나 데이트', type: 'text', content: '', url: '', audioUrl: '' });
       }
     } catch (err) {
       console.error('Failed to add post:', err);
@@ -736,17 +781,40 @@ const App = () => {
           <div className="sidebar-group">
             <h2 className="section-title">카테고리</h2>
             <div className="list-items">
-              {categories.map((cat) => (
-                <div
-                  key={cat.id}
-                  className={`list-item ${activeCategory === cat.id ? 'selected' : ''}`}
-                  onClick={() => handleCategoryClick(cat.id)}
-                >
-                  <div className="item-info">
-                    {cat.icon}
-                    <span className="item-title">{cat.title}</span>
+              {terms.map((term) => (
+                <div key={term.id} className="term-block">
+                  <div
+                    className={`list-item term-item ${activeTerm === term.id && activeCategory === 'all' ? 'selected' : ''}`}
+                    onClick={() => handleTermClick(term.id)}
+                  >
+                    <div className="item-info">
+                      {term.icon}
+                      <span className="item-title">{term.title}</span>
+                    </div>
+                    <ChevronRight size={18} />
                   </div>
-                  <ChevronRight size={18} />
+
+                  {activeTerm === term.id && term.categories.length > 0 && (
+                    <div className="sub-list-items">
+                      <div
+                        className={`sub-list-item ${activeCategory === 'all' ? 'selected' : ''}`}
+                        onClick={() => handleCategoryClick('all', term.id)}
+                      >
+                        {categoryMeta.all.icon}
+                        <span>{term.title} 전체</span>
+                      </div>
+                      {term.categories.map((categoryId) => (
+                        <div
+                          key={categoryId}
+                          className={`sub-list-item ${activeCategory === categoryId ? 'selected' : ''}`}
+                          onClick={() => handleCategoryClick(categoryId, term.id)}
+                        >
+                          {categoryMeta[categoryId]?.icon}
+                          <span>{categoryMeta[categoryId]?.title || categoryId}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -792,7 +860,7 @@ const App = () => {
             <div className="feed-container">
               <header className="page-header">
                 <h2 className="category-display-title">
-                  {categories.find(c => c.id === activeCategory)?.title}
+                  {activeCategoryTitle}
                 </h2>
                 <p className="hero-subtitle">최신 시장 트렌드와 전문가의 인사이트</p>
               </header>
@@ -964,14 +1032,27 @@ const App = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">카테고리</label>
+              <label className="form-label">학기</label>
+              <select
+                className="form-select"
+                value={newPost.term}
+                onChange={(e) => handleNewPostTermChange(e.target.value)}
+              >
+                {terms.map(term => (
+                  <option key={term.id} value={term.id}>{term.title}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">하위 카테고리</label>
               <select
                 className="form-select"
                 value={newPost.category}
                 onChange={(e) => setNewPost({ ...newPost, category: e.target.value })}
               >
-                {categories.filter(c => c.id !== 'all').map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.title}</option>
+                {(getTermCategories(newPost.term).length > 0 ? getTermCategories(newPost.term) : ['언제나 데이트', '굿모닝 담샘', '기업분석도감']).map(categoryId => (
+                  <option key={categoryId} value={categoryId}>{categoryMeta[categoryId]?.title || categoryId}</option>
                 ))}
               </select>
             </div>
