@@ -524,7 +524,11 @@ const PremiumVideoPlayer = ({ url, title, category }) => {
 const App = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [viewMode, setViewMode] = useState('feed'); // 'feed' | 'detail'
-  const defaultTerm = '26년 봄학기';
+  const urlParams = new URLSearchParams(window.location.search);
+  const audienceGroup = urlParams.get('group') || 'all';
+  const summerTerm = '26년 여름학기';
+  const isSummerOnlyGroup = audienceGroup === 'summer';
+  const defaultTerm = isSummerOnlyGroup ? summerTerm : '26년 봄학기';
   const [activeTerm, setActiveTerm] = useState(defaultTerm);
   const [activeCategory, setActiveCategory] = useState('all');
   const [selectedPost, setSelectedPost] = useState(null);
@@ -544,14 +548,16 @@ const App = () => {
 
 
   // 카테고리 정의
-  const terms = [
+  const fullTerms = [
     { id: '개나리반', title: '개나리반', icon: <BookOpen size={20} />, categories: [] },
     { id: '26년 봄학기', title: '26년 봄학기', icon: <LayoutGrid size={20} />, categories: ['언제나 데이트', '굿모닝 담샘', '기업분석도감'] },
-    { id: '26년 여름학기', title: '26년 여름학기', icon: <LayoutGrid size={20} />, categories: ['언제나 데이트', '굿모닝 담샘', '기업분석도감'] }
+    { id: '26년 여름학기', title: '26년 여름학기', icon: <LayoutGrid size={20} />, categories: ['입학길라잡이', '언제나 데이트', '굿모닝 담샘', '기업분석도감'] }
   ];
+  const terms = isSummerOnlyGroup ? fullTerms.filter(term => term.id === summerTerm) : fullTerms;
 
   const categoryMeta = {
     all: { id: 'all', title: '전체', icon: <LayoutGrid size={18} /> },
+    '입학길라잡이': { id: '입학길라잡이', title: '입학길라잡이', icon: <BookOpen size={18} /> },
     '언제나 데이트': { id: '언제나 데이트', title: '언제나 데이트', icon: <PlayCircle size={18} /> },
     '굿모닝 담샘': { id: '굿모닝 담샘', title: '굿모닝 담샘', icon: <Volume2 size={18} /> },
     '기업분석도감': { id: '기업분석도감', title: '기업분석도감', icon: <BookOpen size={18} /> }
@@ -559,6 +565,8 @@ const App = () => {
 
   const getPostTerm = (post) => post.term || defaultTerm;
   const getTermCategories = (termId) => terms.find(term => term.id === termId)?.categories || [];
+  const isAllowedTerm = (termId) => terms.some(term => term.id === termId);
+  const normalizeTerm = (termId) => isAllowedTerm(termId) ? termId : defaultTerm;
 
   // 구글 드라이브 ID 추출 유틸리티
   const getGoogleDriveId = (url) => {
@@ -585,6 +593,7 @@ const App = () => {
   }, []);
 
   const filteredPosts = posts.filter(post => {
+    if (!isAllowedTerm(getPostTerm(post))) return false;
     if (getPostTerm(post) !== activeTerm) return false;
     if (activeCategory !== 'all' && post.category !== activeCategory) return false;
     return true;
@@ -600,9 +609,11 @@ const App = () => {
   useEffect(() => {
     const handlePopState = (event) => {
       if (event.state) {
-        setViewMode(event.state.viewMode || 'feed');
-        setSelectedPost(event.state.selectedPost || null);
-        setActiveTerm(event.state.activeTerm || defaultTerm);
+        const statePost = event.state.selectedPost || null;
+        const canShowStatePost = statePost && isAllowedTerm(getPostTerm(statePost));
+        setViewMode(canShowStatePost ? (event.state.viewMode || 'feed') : 'feed');
+        setSelectedPost(canShowStatePost ? statePost : null);
+        setActiveTerm(normalizeTerm(event.state.activeTerm || defaultTerm));
         setActiveCategory(event.state.activeCategory || 'all');
         setPlayMode('normal');
       } else {
@@ -641,7 +652,8 @@ const App = () => {
   };
 
   const handleTermClick = (termId) => {
-    setActiveTerm(termId);
+    const nextTerm = normalizeTerm(termId);
+    setActiveTerm(nextTerm);
     setActiveCategory('all');
     setViewMode('feed');
     setSelectedPost(null);
@@ -650,14 +662,15 @@ const App = () => {
     window.scrollTo(0, 0);
 
     window.history.pushState(
-      { viewMode: 'feed', selectedPost: null, activeTerm: termId, activeCategory: 'all' },
+      { viewMode: 'feed', selectedPost: null, activeTerm: nextTerm, activeCategory: 'all' },
       '',
-      `#term-${encodeURIComponent(termId)}`
+      `#term-${encodeURIComponent(nextTerm)}`
     );
   };
 
   const handleCategoryClick = (catId, termId = activeTerm) => {
-    setActiveTerm(termId);
+    const nextTerm = normalizeTerm(termId);
+    setActiveTerm(nextTerm);
     setActiveCategory(catId);
     setViewMode('feed');
     setSelectedPost(null);
@@ -667,9 +680,9 @@ const App = () => {
 
     // 히스토리 추가
     window.history.pushState(
-      { viewMode: 'feed', selectedPost: null, activeTerm: termId, activeCategory: catId },
+      { viewMode: 'feed', selectedPost: null, activeTerm: nextTerm, activeCategory: catId },
       '',
-      `#term-${encodeURIComponent(termId)}${catId === 'all' ? '' : `-${encodeURIComponent(catId)}`}`
+      `#term-${encodeURIComponent(nextTerm)}${catId === 'all' ? '' : `-${encodeURIComponent(catId)}`}`
     );
   };
 

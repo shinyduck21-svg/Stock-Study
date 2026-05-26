@@ -1,5 +1,55 @@
 [
     {
+        "id": 236,
+        "title": "[학습길라잡이 VOD] 1교시_투자란 무엇인가요? (매매관리의 기준을 세우는 시간)",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "video",
+        "category": "입학길라잡이",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_236.md",
+        "url": "https://drive.google.com/file/d/1ORnSqRCxBM12Rmp1i1FQEgZPQX3iWG0O/preview"
+    },
+    {
+        "id": 235,
+        "title": "[1교시] 투자란 무엇인가요? (매매관리의 기준을 세우는 시간)",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "text",
+        "category": "입학길라잡이",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_235.md"
+    },
+    {
+        "id": 234,
+        "title": "[입학 길라잡이] 여름학기 첫 걸음, 입학길라잡이로 시작합니다",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "text",
+        "category": "입학길라잡이",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_234.md"
+    },
+    {
+        "id": 233,
+        "title": "5월 20일(수) 투자학교 여름학기 OT 녹화본",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "video",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_233.md",
+        "url": "https://drive.google.com/file/d/1gN9mrxWYAIMO9oaA5niGTPzCtBdaLgly/preview"
+    },
+    {
         "id": 223,
         "title": "983화. 🙋 5월 24일 담쌤의 언제나 데이트",
         "time": "방금 전",
@@ -23,7 +73,7 @@
         "isNew": true,
         "fileName": "briefing_224.md",
         "sourceUrl": "https://us-insight.com/secrets/24211",
-        "term": "26년 봄학기"
+        "term": "26년 여름학기"
     },
     {
         "id": 225,
