@@ -1222,6 +1222,33 @@ a {
   box-shadow: 0 0 15px hsla(var(--primary), 0.3);
 }
 
+.install-app-btn,
+.mobile-install-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+  color: white;
+  font-weight: 800;
+  border: 1px solid hsla(var(--primary), 0.28);
+  box-shadow: 0 4px 14px hsla(var(--primary), 0.25);
+}
+
+.install-app-btn:hover,
+.mobile-install-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px hsla(var(--primary), 0.34);
+}
+
+.mobile-install-btn {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
 .mobile-menu-btn {
   display: none;
   align-items: center;
@@ -1279,6 +1306,18 @@ a {
 @media (max-width: 1024px) {
   .mobile-menu-btn {
     display: flex;
+  }
+}
+
+@media (max-width: 600px) {
+  .install-app-btn {
+    width: 40px;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  .install-app-btn span {
+    display: none;
   }
 }
 

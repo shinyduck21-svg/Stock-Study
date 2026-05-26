@@ -535,7 +535,7 @@ const App = () => {
   const audienceGroup = urlParams.get('group') || 'all';
   const summerTerm = '26년 여름학기';
   const isSummerOnlyGroup = audienceGroup === 'summer';
-  const defaultTerm = isSummerOnlyGroup ? summerTerm : '26년 봄학기';
+  const defaultTerm = summerTerm;
   const [activeTerm, setActiveTerm] = useState(defaultTerm);
   const [activeCategory, setActiveCategory] = useState('all');
   const [selectedPost, setSelectedPost] = useState(null);
@@ -547,11 +547,51 @@ const App = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [playMode, setPlayMode] = useState('normal'); // 'normal' | 'audio-only' (비디오인 경우 오디오만 백그라운드 재생 지원)
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [canInstallApp, setCanInstallApp] = useState(false);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone) return;
+
+    const handleBeforeInstallPrompt = (event) => {
+      event.preventDefault();
+      setInstallPrompt(event);
+      setCanInstallApp(true);
+    };
+
+    const handleAppInstalled = () => {
+      setInstallPrompt(null);
+      setCanInstallApp(false);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!installPrompt) return;
+
+    installPrompt.prompt();
+    const choiceResult = await installPrompt.userChoice;
+
+    if (choiceResult.outcome === 'accepted') {
+      setCanInstallApp(false);
+    }
+
+    setInstallPrompt(null);
+    setIsMenuOpen(false);
+  };
 
 
   // 카테고리 정의
@@ -782,6 +822,19 @@ const App = () => {
           </div>
 
           <div className="nav-actions">
+            {canInstallApp && (
+              <button
+                type="button"
+                onClick={handleInstallApp}
+                className="install-app-btn"
+                title="앱 설치"
+                aria-label="앱 설치"
+              >
+                <Download size={18} />
+                <span>앱 설치</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
@@ -814,6 +867,13 @@ const App = () => {
       />
 
       <aside className={`mobile-menu-panel glass-card ${isMenuOpen ? 'open' : ''}`} aria-hidden={!isMenuOpen}>
+        {canInstallApp && (
+          <button type="button" className="mobile-install-btn" onClick={handleInstallApp}>
+            <Download size={18} />
+            <span>앱 설치</span>
+          </button>
+        )}
+
         <div className="sidebar-group">
           <h2 className="section-title">카테고리</h2>
           <div className="list-items">

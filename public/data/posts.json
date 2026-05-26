@@ -27,7 +27,7 @@
     },
     {
         "id": 235,
-        "title": "[1교시] 투자란 무엇인가요? (매매관리의 기준을 세우는 시간)",
+        "title": "[학습길라잡이] 1교시_투자란 무엇인가요? (매매관리의 기준을 세우는 시간)",
         "time": "방금 전",
         "term": "26년 여름학기",
         "type": "text",
@@ -35,7 +35,8 @@
         "likes": 0,
         "isRead": false,
         "isNew": true,
-        "fileName": "briefing_235.md"
+        "fileName": "briefing_235.md",
+        "pdfUrl": "https://drive.google.com/file/d/182vtyrhL3VYECKoLkXr5PwRYJPF1la-_/view?usp=drive_link"
     },
     {
         "id": 234,
