@@ -622,6 +622,7 @@ const App = () => {
     setSelectedPost(post);
     setViewMode('detail');
     setPlayMode('normal');
+    setIsMenuOpen(false);
     window.scrollTo(0, 0);
     
     // 읽음 처리 추가
@@ -645,6 +646,7 @@ const App = () => {
     setViewMode('feed');
     setSelectedPost(null);
     setPlayMode('normal');
+    setIsMenuOpen(false);
     window.scrollTo(0, 0);
 
     window.history.pushState(
@@ -660,6 +662,7 @@ const App = () => {
     setViewMode('feed');
     setSelectedPost(null);
     setPlayMode('normal');
+    setIsMenuOpen(false);
     window.scrollTo(0, 0);
 
     // 히스토리 추가
@@ -760,6 +763,7 @@ const App = () => {
 
           <div className="nav-actions">
             <button
+              type="button"
               onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
               className="theme-toggle-btn"
               title={theme === 'light' ? '다크 모드로 전환' : '라이트 모드로 전환'}
@@ -768,12 +772,106 @@ const App = () => {
               {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
             </button>
 
-            <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            <button
+              type="button"
+              className="mobile-menu-btn"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label={isMenuOpen ? '메뉴 닫기' : '메뉴 열기'}
+              aria-expanded={isMenuOpen}
+            >
               {isMenuOpen ? <X /> : <Menu />}
             </button>
           </div>
         </div>
       </nav>
+
+      <button
+        type="button"
+        className={`mobile-menu-backdrop ${isMenuOpen ? 'open' : ''}`}
+        onClick={() => setIsMenuOpen(false)}
+        aria-label="메뉴 닫기"
+        tabIndex={isMenuOpen ? 0 : -1}
+      />
+
+      <aside className={`mobile-menu-panel glass-card ${isMenuOpen ? 'open' : ''}`} aria-hidden={!isMenuOpen}>
+        <div className="sidebar-group">
+          <h2 className="section-title">카테고리</h2>
+          <div className="list-items">
+            {terms.map((term) => (
+              <div key={term.id} className="term-block">
+                <div
+                  className={`list-item term-item ${activeTerm === term.id && activeCategory === 'all' ? 'selected' : ''}`}
+                  onClick={() => handleTermClick(term.id)}
+                >
+                  <div className="item-info">
+                    {term.icon}
+                    <span className="item-title">{term.title}</span>
+                  </div>
+                  <ChevronRight size={18} />
+                </div>
+
+                {activeTerm === term.id && term.categories.length > 0 && (
+                  <div className="sub-list-items">
+                    <div
+                      className={`sub-list-item ${activeCategory === 'all' ? 'selected' : ''}`}
+                      onClick={() => handleCategoryClick('all', term.id)}
+                    >
+                      {categoryMeta.all.icon}
+                      <span>{term.title} 전체</span>
+                    </div>
+                    {term.categories.map((categoryId) => (
+                      <div
+                        key={categoryId}
+                        className={`sub-list-item ${activeCategory === categoryId ? 'selected' : ''}`}
+                        onClick={() => handleCategoryClick(categoryId, term.id)}
+                      >
+                        {categoryMeta[categoryId]?.icon}
+                        <span>{categoryMeta[categoryId]?.title || categoryId}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="sidebar-group post-list-group">
+          <h2 className="section-title">학습 목록</h2>
+          <div className="sidebar-post-list">
+            {filteredPosts.length > 0 ? (
+              filteredPosts.map((post) => (
+                <div
+                  key={post.id}
+                  className={`sidebar-post-item ${selectedPost?.id === post.id ? 'active' : ''} ${readPostIds.includes(post.id) ? 'is-read' : ''}`}
+                  onClick={() => handlePostClick(post)}
+                >
+                  <div className="post-item-type">
+                    {post.type === 'video' && <PlayCircle size={14} />}
+                    {post.type === 'audio' && <Volume2 size={14} />}
+                    {post.type === 'text' && <FileText size={14} />}
+                  </div>
+                  <div className="post-item-content">
+                    <span className="post-item-title">{post.title}</span>
+                    <span className="post-item-time">{post.time}</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="empty-sidebar">글이 없습니다.</div>
+            )}
+          </div>
+        </div>
+
+        <div className="write-btn-container">
+          <button className="write-btn" onClick={() => {
+            setIsModalOpen(true);
+            setIsMenuOpen(false);
+          }}>
+            <PlusCircle size={20} /> 새 페이지 추가
+          </button>
+        </div>
+      </aside>
 
       <main className="main-content-layout">
         {/* Left Sidebar - Re-implemented as requested */}
