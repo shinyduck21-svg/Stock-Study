@@ -644,6 +644,29 @@ a {
   margin: 24px 0;
 }
 
+.pdf-download-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.pdf-download-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: hsla(var(--primary), 0.1);
+  color: hsl(var(--primary));
+  font-weight: 800;
+  border: 1px solid hsla(var(--primary), 0.24);
+}
+
+.pdf-download-link:hover {
+  background: hsla(var(--primary), 0.16);
+  transform: translateY(-1px);
+}
+
 .audio-player-bar {
   padding: 24px;
   margin: 24px 0 40px;

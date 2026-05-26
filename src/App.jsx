@@ -21,7 +21,8 @@ import {
   Sun,
   Moon,
   Maximize,
-  Minimize
+  Minimize,
+  Download
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import TurndownService from 'turndown';
@@ -35,6 +36,12 @@ const getGoogleDriveId = (url) => {
   const matchFile = url.match(/\/file\/d\/([^/]+)/);
   if (matchFile) return matchFile[1];
   return null;
+};
+
+const getDownloadUrl = (url) => {
+  const driveId = getGoogleDriveId(url);
+  if (driveId) return `https://drive.google.com/uc?export=download&id=${driveId}`;
+  return url;
 };
 
 // 모바일 최적화 프리미엄 오디오 플레이어 (Media Session API 탑재)
@@ -536,7 +543,7 @@ const App = () => {
   const [posts, setPosts] = useState([]);
   const [readPostIds, setReadPostIds] = useState([]); // 읽은 게시글 ID 목록
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newPost, setNewPost] = useState({ title: '', term: defaultTerm, category: '언제나 데이트', type: 'text', content: '', url: '', audioUrl: '' });
+  const [newPost, setNewPost] = useState({ title: '', term: defaultTerm, category: '언제나 데이트', type: 'text', content: '', url: '', audioUrl: '', pdfUrl: '' });
   const [isSaving, setIsSaving] = useState(false);
   const [playMode, setPlayMode] = useState('normal'); // 'normal' | 'audio-only' (비디오인 경우 오디오만 백그라운드 재생 지원)
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
@@ -724,7 +731,7 @@ const App = () => {
         // Open the new post immediately
         handlePostClick(result.post);
         setIsModalOpen(false);
-        setNewPost({ title: '', term: defaultTerm, category: '언제나 데이트', type: 'text', content: '', url: '', audioUrl: '' });
+        setNewPost({ title: '', term: defaultTerm, category: '언제나 데이트', type: 'text', content: '', url: '', audioUrl: '', pdfUrl: '' });
       }
     } catch (err) {
       console.error('Failed to add post:', err);
@@ -1106,6 +1113,22 @@ const App = () => {
                       </div>
                     </div>
                   )}
+
+                  {selectedPost.pdfUrl && (
+                    <div className="pdf-download-section">
+                      <a
+                        className="pdf-download-link"
+                        href={getDownloadUrl(selectedPost.pdfUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download
+                      >
+                        <Download size={20} />
+                        <span>PDF 파일 다운로드</span>
+                        <ExternalLink size={16} />
+                      </a>
+                    </div>
+                  )}
                 </div>
               </article>
             </div>
@@ -1202,6 +1225,17 @@ const App = () => {
                   onChange={(e) => setNewPost({ ...newPost, audioUrl: e.target.value })}
                 />
               </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">PDF 파일 링크</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="https://..."
+                value={newPost.pdfUrl}
+                onChange={(e) => setNewPost({ ...newPost, pdfUrl: e.target.value })}
+              />
             </div>
 
             <div className="modal-footer">

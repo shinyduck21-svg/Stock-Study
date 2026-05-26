@@ -58,6 +58,10 @@ export default defineConfig({
                   if (finalPost.type !== 'video') finalPost.type = 'audio';
                 }
 
+                if (newPostData.pdfUrl && newPostData.pdfUrl.trim()) {
+                  finalPost.pdfUrl = newPostData.pdfUrl.trim();
+                }
+
                 // Add to start of array (newest first)
                 posts.unshift(finalPost);
                 fs.writeFileSync(postsFilePath, JSON.stringify(posts, null, 4));
