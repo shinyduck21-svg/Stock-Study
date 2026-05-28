@@ -10,7 +10,7 @@ const rootDir = resolve(__dirname, '..');
 
 const DEFAULT_SOURCE = 'https://us-insight.com/club/13/contents?type=all';
 const DEFAULT_CATEGORY = 'US Insight';
-const DEFAULT_TERM = '26년 봄학기';
+const DEFAULT_TERM = '26년 여름학기';
 const DEFAULT_PROFILE_DIR = resolve(rootDir, 'chrome_profile');
 const DEFAULT_PORT = 9222;
 const DEFAULT_GDRIVE_FOLDER_ID = '1v9H6SxCxIelFLW_nfDkOYjZFX3t_3nNC';
