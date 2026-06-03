@@ -28,6 +28,7 @@ const debug = Boolean(args.debug);
 const force = Boolean(args.force);
 const skipMedia = Boolean(args.skipMedia);
 const gdriveFolderId = args.gdriveFolderId || DEFAULT_GDRIVE_FOLDER_ID;
+const publicBaseUrl = normalizePublicBaseUrl(args.publicBaseUrl || process.env.PUBLIC_SITE_URL || 'https://shinyduck21-svg.github.io/Stock-Study/');
 const updateIds = parseIdList(args.updateIds || args.updateId || '');
 
 const postsPath = resolve(rootDir, 'public/data/posts.json');
@@ -190,6 +191,7 @@ const nextIdStart = Math.max(0, ...posts.map((post) => Number(post.id) || 0)) + 
   if (dryRun) {
     console.log(`Dry run: ${additions.length} posts would be imported.`);
     additions.forEach(({ post }) => console.log(`- #${post.id} ${post.title}`));
+    printImportNotification(additions, { dryRun: true });
     await cdp.close();
     return;
   }
@@ -201,8 +203,42 @@ const nextIdStart = Math.max(0, ...posts.map((post) => Number(post.id) || 0)) + 
   writeFileSync(postsPath, `${JSON.stringify([...additions.map((x) => x.post), ...posts], null, 4)}\n`, 'utf8');
   console.log(`Imported ${additions.length} posts.`);
   additions.forEach(({ post }) => console.log(`- #${post.id} ${post.title}`));
+  printImportNotification(additions);
 
   await cdp.close();
+}
+
+function printImportNotification(additions, { dryRun: isPreview = false } = {}) {
+  const posts = additions.map((addition) => addition.post);
+  const prefix = isPreview ? '[미리보기] ' : '';
+  const lines = [
+    '',
+    '----- 알림 복사용 메시지 -----',
+    `${prefix}[주식 투자 고수방] 새 글 ${posts.length}개가 올라왔습니다.`,
+    '',
+  ];
+
+  posts.forEach((post, index) => {
+    lines.push(`${index + 1}. ${post.title}`);
+    lines.push(postUrl(post.id));
+    if (index < posts.length - 1) lines.push('');
+  });
+
+  lines.push('-----------------------------');
+  console.log(lines.join('\n'));
+}
+
+function postUrl(postId) {
+  const hash = `#post-${postId}`;
+  if (!publicBaseUrl) return hash;
+  return `${publicBaseUrl}${hash}`;
+}
+
+function normalizePublicBaseUrl(value) {
+  const baseUrl = String(value || '').trim();
+  if (!baseUrl) return '';
+  if (baseUrl.endsWith('/')) return baseUrl;
+  return `${baseUrl}/`;
 }
 
 async function updateExistingPosts({ cdp, posts, ids }) {
