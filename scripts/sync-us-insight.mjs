@@ -516,8 +516,7 @@ async function scrapeContent(cdp, url, fallbackTitle = '') {
   await cdp.send('Page.navigate', { url });
   await waitForPage(cdp);
   await autoScroll(cdp);
-  const transcriptOpened = await openTranscriptIfAvailable(cdp);
-  if (debug && transcriptOpened) console.log('Opened transcript panel.');
+  const beforeTranscriptText = await evaluate(cdp, () => document.body?.innerText || '');
 
   const data = await evaluate(cdp, (fallbackTitleText) => {
     const bodyText = document.body?.innerText || '';
@@ -894,10 +893,20 @@ async function scrapeContent(cdp, url, fallbackTitle = '') {
         .replace(/"/g, '&quot;');
     }
   }, fallbackTitle);
+  const transcriptOpened = await openTranscriptIfAvailableStable(cdp);
+  if (debug && transcriptOpened) console.log('Opened transcript panel.');
+  const transcriptMarkdown = transcriptOpened
+    ? await extractTranscriptMarkdown(cdp, beforeTranscriptText)
+    : '';
+  if (debug && transcriptOpened) console.log(`Transcript markdownLength=${transcriptMarkdown.length}`);
+
   await delay(2000);
   cdp.off('Network.responseReceived', networkHandler);
 
-  const markdown = cleanupMarkdown(turndown.turndown(data.html || data.text || ''));
+  const markdown = appendTranscriptMarkdown(
+    cleanupMarkdown(turndown.turndown(data.html || data.text || '')),
+    transcriptMarkdown,
+  );
   const domMedia = data.media.map((url) => mediaFromUrl(url, '')).filter(Boolean);
   return {
     ...data,
@@ -905,6 +914,51 @@ async function scrapeContent(cdp, url, fallbackTitle = '') {
     markdown,
     media: dedupeMedia([...domMedia, ...networkMedia]),
   };
+}
+
+async function openTranscriptIfAvailableStable(cdp) {
+  const result = await evaluate(cdp, () => {
+    const transcriptButtonPattern = /(?:\uC2A4\uD06C\uB9BD\uD2B8\s*\uBCF4\uAE30|transcript|script)/i;
+    const candidates = Array.from(document.querySelectorAll('button, [role="button"], a, div, span'))
+      .filter((node) => transcriptButtonPattern.test((node.innerText || node.textContent || '').replace(/\s+/g, ' ').trim()))
+      .map((node) => {
+        const rect = node.getBoundingClientRect();
+        return {
+          node,
+          text: (node.innerText || node.textContent || '').replace(/\s+/g, ' ').trim(),
+          visible: rect.width > 0 && rect.height > 0,
+          area: rect.width * rect.height,
+        };
+      })
+      .filter((item) => item.visible)
+      .sort((a, b) => a.area - b.area);
+
+    const target = candidates[0]?.node;
+    if (!target) return false;
+    target.scrollIntoView({ block: 'center', inline: 'center' });
+    target.click();
+    return true;
+  });
+
+  if (!result) return false;
+  await waitForTranscriptRender(cdp);
+  await autoScroll(cdp);
+  return true;
+}
+
+async function waitForTranscriptRender(cdp) {
+  const before = await evaluate(cdp, () => document.body?.innerText?.length || 0);
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    await delay(500);
+    const state = await evaluate(cdp, (initialLength) => {
+      const text = document.body?.innerText || '';
+      return {
+        grew: text.length > initialLength + 200,
+        hasTranscriptText: /\uC2A4\uD06C\uB9BD\uD2B8|\uC790\uB9C9|transcript/i.test(text),
+      };
+    }, before);
+    if (state.grew || state.hasTranscriptText) return;
+  }
 }
 
 async function openTranscriptIfAvailable(cdp) {
@@ -936,6 +990,96 @@ async function openTranscriptIfAvailable(cdp) {
   return true;
 }
 
+async function extractTranscriptMarkdown(cdp, beforeTranscriptText) {
+  const transcriptText = await evaluate(cdp, (beforeText) => {
+    const beforeKeys = new Set(toLines(beforeText).map(lineKey));
+    const afterLines = toLines(document.body?.innerText || '');
+    const picked = [];
+    const seen = new Set();
+
+    for (const line of afterLines) {
+      const key = lineKey(line);
+      if (!key || beforeKeys.has(key) || seen.has(key) || isTranscriptNoise(line)) continue;
+      seen.add(key);
+      picked.push(line);
+    }
+
+    const pickedTranscript = trimTranscriptLines(picked);
+    if (pickedTranscript.join('\n').length >= 80) return pickedTranscript.join('\n');
+
+    const candidates = Array.from(document.querySelectorAll('article, main, section, [role="dialog"], [class*="script" i], [class*="transcript" i], [class*="modal" i], [class*="content" i]'))
+      .map((node) => toLines(node.innerText || node.textContent || '').filter((line) => !isTranscriptNoise(line)))
+      .map((lines) => lines.filter((line) => !beforeKeys.has(lineKey(line))))
+      .map((lines) => trimTranscriptLines(lines))
+      .filter((lines) => lines.join('\n').length >= 80)
+      .sort((a, b) => b.join('\n').length - a.join('\n').length);
+
+    return candidates[0]?.join('\n') || '';
+
+    function toLines(value) {
+      return String(value || '')
+        .replace(/\r\n/g, '\n')
+        .split('\n')
+        .map((line) => line.replace(/\s+/g, ' ').trim())
+        .filter(Boolean);
+    }
+
+    function lineKey(value) {
+      return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    }
+
+    function isTranscriptNoise(value) {
+      const text = String(value || '').trim();
+      if (!text || text.length < 2) return true;
+      if (/^\d{1,2}:\d{2}(?:\s*-\s*\d{1,2}:\d{2})?$/.test(text)) return true;
+      if (/^(like|\d{1,6}|login|sign up|notification|menu|NAVER)$/i.test(text)) return true;
+      if (/^(AI\s*\uC2A4\uD06C\uB9BD\uD2B8|\uC804\uCCB4\s*\uC2A4\uD06C\uB9BD\uD2B8|\uC694\uC57D\s*[·ㆍ]\s*\uD0A4\uC6CC\uB4DC)$/i.test(text)) return true;
+      if (/^(?:\uC18D\uB3C4\s*\([^)]*\)|\uC2A4\uD06C\uB9BD\uD2B8\s*\uBCF4\uAE30\s*Beta)$/i.test(text)) return true;
+      if (/^(?:\uB313\uAE00|\uC751\uC6D0|\uC88B\uC544\uC694|\uBD81\uB9C8\uD06C|\uBAA9\uB85D|\uACF5\uC720)/.test(text)) return true;
+      return false;
+    }
+
+    function trimTranscriptLines(lines) {
+      const cleaned = lines.filter((line) => !isTranscriptNoise(line));
+      const stopIndex = cleaned.findIndex((line) => {
+        const text = String(line || '').trim();
+        return /^(?:\d+\s*(?:\uC77C|\uC2DC\uAC04|\uBD84)\s*\uC804|\d+\s*\uD68C\uCC28|(?:\uD22C\uC790(?:\uC655|\uCD08\uBCF4|\uD559\uC2B5))[_-])/u.test(text);
+      });
+      if (stopIndex < 0) return cleaned;
+      return cleaned.slice(0, Math.max(0, stopIndex - 1));
+    }
+  }, beforeTranscriptText);
+
+  return cleanupMarkdown(turndown.turndown(textToHtml(transcriptText)));
+}
+
+function appendTranscriptMarkdown(markdown, transcriptMarkdown) {
+  const body = String(markdown || '').trim();
+  const transcript = String(transcriptMarkdown || '').trim();
+  if (!transcript || body.includes(transcript)) return body;
+
+  return [
+    body,
+    '## 스크립트',
+    transcript,
+  ].filter(Boolean).join('\n\n');
+}
+
+function textToHtml(text) {
+  return String(text || '')
+    .split(/\n{2,}/)
+    .map((block) => `<p>${escapeHtml(block).replace(/\n/g, '<br>')}</p>`)
+    .join('\n');
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 function buildMarkdown(item) {
   return `${item.markdown}`.trimEnd() + '\n';
 }
@@ -954,6 +1098,8 @@ function cleanupMarkdown(markdown) {
     .replace(/^!\[[^\]]*\]\([^)]*(?:IC_(?:skip|rewind|AudioPlay|forward)|speedometer\.svg)[^)]*\)\s*$/gim, '')
     .replace(/^\s*속도\s*\([^)]*\)\s*$/gm, '')
     .replace(/^\s*스크립트\s*보기\s*Beta\s*$/gm, '')
+    .replace(/^\s*\uC18D\uB3C4\s*\([^)]*\)\s*$/gm, '')
+    .replace(/^\s*\uC2A4\uD06C\uB9BD\uD2B8\s*\uBCF4\uAE30\s*Beta\s*$/gm, '')
     .replace(/\n{3,}/g, '\n\n')
     .replace(/^\s*(login|sign up|notification|menu|NAVER)\s*$/gim, '')
     .trim();
