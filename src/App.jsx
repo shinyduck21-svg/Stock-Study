@@ -14,6 +14,7 @@ import {
   BookOpen,
   LayoutGrid,
   PlusCircle,
+  Calculator,
   Play,
   Pause,
   RotateCcw,
@@ -43,6 +44,20 @@ const getDownloadUrl = (url) => {
   if (driveId) return `https://drive.google.com/uc?export=download&id=${driveId}`;
   return url;
 };
+
+const ALLOCATION_CATEGORY_ID = '담쌤 종목비율 계산기';
+const ALLOCATION_CATEGORY_HASH = '#calculator-damsam-allocation';
+
+const formatWon = (value) => {
+  const amount = Number.isFinite(value) ? value : 0;
+  return `₩${Math.round(amount).toLocaleString('ko-KR')}`;
+};
+
+const parseWonInput = (value) => Number(String(value || '').replace(/[^\d]/g, '')) || 0;
+
+const buildAllocationRatios = (items = []) => Object.fromEntries(
+  items.map((item, index) => [`${item.group}-${item.name}-${index}`, Number(item.ratio) || 0])
+);
 
 // 모바일 최적화 프리미엄 오디오 플레이어 (Media Session API 탑재)
 const PremiumAudioPlayer = ({ url, title, category }) => {
@@ -541,6 +556,10 @@ const App = () => {
   const [selectedPost, setSelectedPost] = useState(null);
   const [markdownContent, setMarkdownContent] = useState('');
   const [posts, setPosts] = useState([]);
+  const [allocationSets, setAllocationSets] = useState([]);
+  const [selectedAllocationSet, setSelectedAllocationSet] = useState(null);
+  const [allocationTotal, setAllocationTotal] = useState(1000000);
+  const [allocationRatios, setAllocationRatios] = useState({});
   const [readPostIds, setReadPostIds] = useState([]); // 읽은 게시글 ID 목록
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPost, setNewPost] = useState({ title: '', term: defaultTerm, category: '언제나 데이트', type: 'text', content: '', url: '', audioUrl: '', pdfUrl: '' });
@@ -632,6 +651,11 @@ const App = () => {
       .then(data => setPosts(data))
       .catch(err => console.error('Error fetching posts:', err));
 
+    fetch('./data/allocation-calculators.json')
+      .then(res => res.json())
+      .then(data => setAllocationSets(data))
+      .catch(err => console.error('Error fetching allocation calculators:', err));
+
     // 로컬 저장소에서 읽은 글 목록 불러오기
     const savedReadPosts = localStorage.getItem('readPostIds');
     if (savedReadPosts) {
@@ -640,11 +664,40 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (posts.length === 0) return;
+    if (posts.length === 0 && allocationSets.length === 0) return;
 
-    const openPostFromHash = () => {
+    const openContentFromHash = () => {
+      if (window.location.hash === ALLOCATION_CATEGORY_HASH) {
+        setActiveTerm(defaultTerm);
+        setActiveCategory(ALLOCATION_CATEGORY_ID);
+        setSelectedPost(null);
+        setSelectedAllocationSet(null);
+        setViewMode('feed');
+        setPlayMode('normal');
+        window.scrollTo(0, 0);
+        return true;
+      }
+
+      const calculatorMatch = window.location.hash.match(/^#calculator-(.+)$/);
+      if (calculatorMatch && allocationSets.length > 0) {
+        const calculatorId = calculatorMatch[1];
+        const allocationSet = allocationSets.find((item) => item.id === calculatorId);
+        if (allocationSet) {
+          setActiveTerm(defaultTerm);
+          setActiveCategory(ALLOCATION_CATEGORY_ID);
+          setSelectedPost(null);
+          setSelectedAllocationSet(allocationSet);
+          setAllocationTotal(allocationSet.defaultAmount || 1000000);
+          setAllocationRatios(buildAllocationRatios(allocationSet.items));
+          setViewMode('feed');
+          setPlayMode('normal');
+          window.scrollTo(0, 0);
+          return true;
+        }
+      }
+
       const match = window.location.hash.match(/^#post-(\d+)$/);
-      if (!match) return false;
+      if (!match || posts.length === 0) return false;
 
       const postId = Number(match[1]);
       const post = posts.find((item) => Number(item.id) === postId);
@@ -653,16 +706,17 @@ const App = () => {
       setActiveTerm(getPostTerm(post));
       setActiveCategory('all');
       setSelectedPost(post);
+      setSelectedAllocationSet(null);
       setViewMode('detail');
       setPlayMode('normal');
       window.scrollTo(0, 0);
       return true;
     };
 
-    openPostFromHash();
-    window.addEventListener('hashchange', openPostFromHash);
-    return () => window.removeEventListener('hashchange', openPostFromHash);
-  }, [posts]);
+    openContentFromHash();
+    window.addEventListener('hashchange', openContentFromHash);
+    return () => window.removeEventListener('hashchange', openContentFromHash);
+  }, [posts, allocationSets]);
 
   const filteredPosts = posts.filter(post => {
     if (!isAllowedTerm(getPostTerm(post))) return false;
@@ -672,9 +726,11 @@ const App = () => {
   });
 
   const activeTermInfo = terms.find(term => term.id === activeTerm);
-  const activeCategoryTitle = activeCategory === 'all'
-    ? `${activeTermInfo?.title || activeTerm} 전체`
-    : `${activeTermInfo?.title || activeTerm} · ${categoryMeta[activeCategory]?.title || activeCategory}`;
+  const activeCategoryTitle = activeCategory === ALLOCATION_CATEGORY_ID
+    ? ALLOCATION_CATEGORY_ID
+    : activeCategory === 'all'
+      ? `${activeTermInfo?.title || activeTerm} 전체`
+      : `${activeTermInfo?.title || activeTerm} · ${categoryMeta[activeCategory]?.title || activeCategory}`;
 
 
   // 브라우저 히스토리 (뒤로가기) 지원
@@ -703,6 +759,7 @@ const App = () => {
 
   const handlePostClick = (post) => {
     setSelectedPost(post);
+    setSelectedAllocationSet(null);
     setViewMode('detail');
     setPlayMode('normal');
     setIsMenuOpen(false);
@@ -723,12 +780,58 @@ const App = () => {
     );
   };
 
+  const handleAllocationCategoryClick = () => {
+    setActiveTerm(defaultTerm);
+    setActiveCategory(ALLOCATION_CATEGORY_ID);
+    setSelectedPost(null);
+    setSelectedAllocationSet(null);
+    setViewMode('feed');
+    setPlayMode('normal');
+    setIsMenuOpen(false);
+    window.scrollTo(0, 0);
+    window.history.pushState(
+      { viewMode: 'feed', selectedPost: null, activeTerm: defaultTerm, activeCategory: ALLOCATION_CATEGORY_ID },
+      '',
+      ALLOCATION_CATEGORY_HASH
+    );
+  };
+
+  const handleAllocationSetClick = (allocationSet) => {
+    setSelectedPost(null);
+    setSelectedAllocationSet(allocationSet);
+    setAllocationTotal(allocationSet.defaultAmount || 1000000);
+    setAllocationRatios(buildAllocationRatios(allocationSet.items));
+    setViewMode('feed');
+    setPlayMode('normal');
+    setIsMenuOpen(false);
+    window.scrollTo(0, 0);
+    window.history.pushState(
+      { viewMode: 'feed', selectedPost: null, activeTerm: defaultTerm, activeCategory: ALLOCATION_CATEGORY_ID, selectedAllocationId: allocationSet.id },
+      '',
+      `#calculator-${allocationSet.id}`
+    );
+  };
+
+  const handleAllocationRatioChange = (key, value) => {
+    setAllocationRatios({
+      ...allocationRatios,
+      [key]: Number(value) || 0,
+    });
+  };
+
+  const resetAllocationRatios = () => {
+    if (!selectedAllocationSet) return;
+    setAllocationTotal(selectedAllocationSet.defaultAmount || 1000000);
+    setAllocationRatios(buildAllocationRatios(selectedAllocationSet.items));
+  };
+
   const handleTermClick = (termId) => {
     const nextTerm = normalizeTerm(termId);
     setActiveTerm(nextTerm);
     setActiveCategory('all');
     setViewMode('feed');
     setSelectedPost(null);
+    setSelectedAllocationSet(null);
     setPlayMode('normal');
     setIsMenuOpen(false);
     window.scrollTo(0, 0);
@@ -746,6 +849,7 @@ const App = () => {
     setActiveCategory(catId);
     setViewMode('feed');
     setSelectedPost(null);
+    setSelectedAllocationSet(null);
     setPlayMode('normal');
     setIsMenuOpen(false);
     window.scrollTo(0, 0);
@@ -761,6 +865,7 @@ const App = () => {
   const handleBackToFeed = () => {
     setViewMode('feed');
     setSelectedPost(null);
+    setSelectedAllocationSet(null);
     setPlayMode('normal');
     window.history.pushState(
       { viewMode: 'feed', selectedPost: null, activeTerm: activeTerm, activeCategory: activeCategory },
@@ -835,6 +940,37 @@ const App = () => {
       }
     }
   }, [viewMode, selectedPost]);
+
+  const getAllocationKey = (item, index) => `${item.group}-${item.name}-${index}`;
+  const allocationItems = selectedAllocationSet?.items || [];
+  const allocationTotalAmount = Number(allocationTotal) || 0;
+  const allocationRows = allocationItems.map((item, index) => {
+    const key = getAllocationKey(item, index);
+    const ratio = Number(allocationRatios[key] ?? item.ratio) || 0;
+    return {
+      ...item,
+      key,
+      ratio,
+      amount: allocationTotalAmount * ratio / 100,
+    };
+  });
+  const allocationRatioSum = allocationRows.reduce((sum, item) => sum + item.ratio, 0);
+  const allocationAmountSum = allocationRows.reduce((sum, item) => sum + item.amount, 0);
+  const allocationGroupSummary = allocationRows.reduce((summary, item) => {
+    const current = summary[item.group] || { ratio: 0, amount: 0 };
+    return {
+      ...summary,
+      [item.group]: {
+        ratio: current.ratio + item.ratio,
+        amount: current.amount + item.amount,
+      },
+    };
+  }, {});
+  const allocationGroupRowSpan = allocationRows.reduce((summary, item) => ({
+    ...summary,
+    [item.group]: (summary[item.group] || 0) + 1,
+  }), {});
+  const allocationGroupSeen = {};
 
   return (
     <div className="app-container">
@@ -938,6 +1074,16 @@ const App = () => {
                 )}
               </div>
             ))}
+            <div
+              className={`list-item term-item ${activeCategory === ALLOCATION_CATEGORY_ID ? 'selected' : ''}`}
+              onClick={handleAllocationCategoryClick}
+            >
+              <div className="item-info">
+                <Calculator size={20} />
+                <span className="item-title">{ALLOCATION_CATEGORY_ID}</span>
+              </div>
+              <ChevronRight size={18} />
+            </div>
           </div>
         </div>
 
@@ -1020,6 +1166,16 @@ const App = () => {
                   )}
                 </div>
               ))}
+              <div
+                className={`list-item term-item ${activeCategory === ALLOCATION_CATEGORY_ID ? 'selected' : ''}`}
+                onClick={handleAllocationCategoryClick}
+              >
+                <div className="item-info">
+                  <Calculator size={20} />
+                  <span className="item-title">{ALLOCATION_CATEGORY_ID}</span>
+                </div>
+                <ChevronRight size={18} />
+              </div>
             </div>
           </div>
 
@@ -1068,7 +1224,112 @@ const App = () => {
                 <p className="hero-subtitle">최신 시장 트렌드와 전문가의 인사이트</p>
               </header>
 
-              <div className="feed-list glass-card">
+              {activeCategory === ALLOCATION_CATEGORY_ID && (
+                <div className="allocation-tool glass-card">
+                  {!selectedAllocationSet ? (
+                    <div className="allocation-list">
+                      {allocationSets.map((allocationSet) => (
+                        <button
+                          type="button"
+                          key={allocationSet.id}
+                          className="allocation-list-item"
+                          onClick={() => handleAllocationSetClick(allocationSet)}
+                        >
+                          <span>{allocationSet.title}</span>
+                          <ChevronRight size={18} />
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="allocation-detail">
+                      <div className="allocation-detail-header">
+                        <button type="button" className="back-btn allocation-back-btn" onClick={handleAllocationCategoryClick}>
+                          <ArrowLeft size={18} /> 목록
+                        </button>
+                        <button type="button" className="allocation-reset-btn" onClick={resetAllocationRatios}>
+                          <RotateCcw size={16} /> 기본값
+                        </button>
+                      </div>
+
+                      <h3 className="allocation-title">{selectedAllocationSet.title}</h3>
+
+                      <div className="allocation-controls">
+                        <label>
+                          <span>총금액</span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={formatWon(allocationTotal)}
+                            onChange={(event) => setAllocationTotal(parseWonInput(event.target.value))}
+                          />
+                        </label>
+                        <div className={`allocation-total-chip ${Math.abs(allocationRatioSum - 100) < 0.01 ? 'ok' : 'warn'}`}>
+                          비율 합계 {allocationRatioSum.toFixed(1)}%
+                        </div>
+                      </div>
+
+                      <div className="allocation-table-wrap">
+                        <table className="allocation-table">
+                          <thead>
+                            <tr>
+                              <th>구분</th>
+                              <th>종목</th>
+                              <th>비율</th>
+                              <th>금액</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {allocationRows.map((row) => {
+                              const showGroup = !allocationGroupSeen[row.group];
+                              allocationGroupSeen[row.group] = true;
+                              return (
+                                <tr key={row.key}>
+                                  {showGroup && (
+                                    <td className="allocation-group-cell" rowSpan={allocationGroupRowSpan[row.group]}>
+                                      {row.group}
+                                    </td>
+                                  )}
+                                  <td className="allocation-name-cell">{row.name}</td>
+                                  <td>
+                                    <div className="allocation-ratio-field">
+                                      <input
+                                        className="allocation-ratio-input"
+                                        type="number"
+                                        min="0"
+                                        step="0.1"
+                                        value={row.ratio}
+                                        onChange={(event) => handleAllocationRatioChange(row.key, event.target.value)}
+                                      />
+                                      <span>%</span>
+                                    </div>
+                                  </td>
+                                  <td className="allocation-amount-cell">{formatWon(row.amount)}</td>
+                                </tr>
+                              );
+                            })}
+                            {Object.entries(allocationGroupSummary)
+                              .filter(([group]) => group !== '공통')
+                              .map(([group, summary]) => (
+                                <tr className="allocation-summary-row" key={group}>
+                                  <td colSpan="2">{group === '미국' ? '미국 시장 합계' : '국내시장 합계'}</td>
+                                  <td>{summary.ratio.toFixed(1)}%</td>
+                                  <td>{formatWon(summary.amount)}</td>
+                                </tr>
+                              ))}
+                            <tr className="allocation-total-row">
+                              <td colSpan="2">합계</td>
+                              <td>{allocationRatioSum.toFixed(1)}%</td>
+                              <td>{formatWon(allocationAmountSum)}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="feed-list glass-card" style={{ display: activeCategory === ALLOCATION_CATEGORY_ID ? 'none' : undefined }}>
                 {filteredPosts.length > 0 ? filteredPosts.map((post) => (
                   <div
                     key={post.id}
