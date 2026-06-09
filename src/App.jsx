@@ -639,6 +639,31 @@ const App = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (posts.length === 0) return;
+
+    const openPostFromHash = () => {
+      const match = window.location.hash.match(/^#post-(\d+)$/);
+      if (!match) return false;
+
+      const postId = Number(match[1]);
+      const post = posts.find((item) => Number(item.id) === postId);
+      if (!post || !isAllowedTerm(getPostTerm(post))) return false;
+
+      setActiveTerm(getPostTerm(post));
+      setActiveCategory('all');
+      setSelectedPost(post);
+      setViewMode('detail');
+      setPlayMode('normal');
+      window.scrollTo(0, 0);
+      return true;
+    };
+
+    openPostFromHash();
+    window.addEventListener('hashchange', openPostFromHash);
+    return () => window.removeEventListener('hashchange', openPostFromHash);
+  }, [posts]);
+
   const filteredPosts = posts.filter(post => {
     if (!isAllowedTerm(getPostTerm(post))) return false;
     if (getPostTerm(post) !== activeTerm) return false;

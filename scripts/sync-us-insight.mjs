@@ -27,6 +27,7 @@ const dryRun = Boolean(args.dryRun);
 const debug = Boolean(args.debug);
 const force = Boolean(args.force);
 const skipMedia = Boolean(args.skipMedia);
+const updateTranscripts = Boolean(args.updateTranscripts || args.updateTranscript);
 const gdriveFolderId = args.gdriveFolderId || DEFAULT_GDRIVE_FOLDER_ID;
 const publicBaseUrl = normalizePublicBaseUrl(args.publicBaseUrl || process.env.PUBLIC_SITE_URL || 'https://shinyduck21-svg.github.io/Stock-Study/');
 const updateIds = parseIdList(args.updateIds || args.updateId || '');
@@ -34,6 +35,7 @@ const updateIds = parseIdList(args.updateIds || args.updateId || '');
 const postsPath = resolve(rootDir, 'public/data/posts.json');
 const docsDir = resolve(rootDir, 'public/docs');
 const tempDir = resolve(rootDir, 'temp_media');
+const TRANSCRIPT_HEADING = '## \uC2A4\uD06C\uB9BD\uD2B8';
 
 const turndown = new TurndownService({
   headingStyle: 'atx',
@@ -83,6 +85,14 @@ async function main() {
     await waitForPage(cdp);
   }
 
+  const posts = readJson(postsPath);
+
+  if (updateTranscripts) {
+    await updateTranscriptSections({ cdp, posts });
+    await cdp.close();
+    return;
+  }
+
   await autoScroll(cdp);
   const links = await extractContentLinks(cdp, sourceUrl);
   if (links.length === 0) {
@@ -98,8 +108,6 @@ async function main() {
     console.log(diagnostics.textSample);
     throw new Error('No content links were found. The list page may still be logged out, or its cards do not use normal links.');
   }
-
-  const posts = readJson(postsPath);
 
   if (updateIds.length > 0) {
     await updateExistingPosts({ cdp, posts, ids: updateIds });
@@ -239,6 +247,113 @@ function normalizePublicBaseUrl(value) {
   if (!baseUrl) return '';
   if (baseUrl.endsWith('/')) return baseUrl;
   return `${baseUrl}/`;
+}
+
+async function updateTranscriptSections({ cdp, posts }) {
+  const candidates = posts
+    .filter((post) => post?.sourceUrl && post?.fileName)
+    .filter((post) => updateIds.length === 0 || updateIds.includes(Number(post.id)))
+    .filter((post) => force || !hasTranscriptSection(readDocIfExists(post.fileName)));
+  const targetPosts = candidates.slice(0, Number.isFinite(limit) ? limit : candidates.length);
+
+  let checked = 0;
+  let found = 0;
+  let updated = 0;
+  let skippedExisting = 0;
+  let missingDoc = 0;
+  const failures = [];
+
+  console.log(`${dryRun ? 'Dry run: ' : ''}checking ${targetPosts.length} posts for transcript sections.`);
+
+  for (const post of targetPosts) {
+    checked += 1;
+    const docPath = resolve(docsDir, post.fileName);
+    if (!existsSync(docPath)) {
+      missingDoc += 1;
+      console.warn(`- #${post.id} missing markdown file: ${post.fileName}`);
+      continue;
+    }
+
+    const currentMarkdown = readFileSync(docPath, 'utf8');
+    if (!force && hasTranscriptSection(currentMarkdown)) {
+      skippedExisting += 1;
+      if (debug) console.log(`- #${post.id} already has transcript`);
+      continue;
+    }
+
+    console.log(`Checking #${post.id}: ${post.title || post.sourceUrl}`);
+    try {
+      const transcriptMarkdown = await scrapeTranscriptOnly(cdp, post.sourceUrl);
+      if (!transcriptMarkdown) {
+        if (debug) console.log(`- #${post.id} no transcript`);
+        continue;
+      }
+
+      found += 1;
+      const nextMarkdown = upsertTranscriptSection(currentMarkdown, transcriptMarkdown);
+      if (nextMarkdown === currentMarkdown) {
+        if (debug) console.log(`- #${post.id} transcript unchanged`);
+        continue;
+      }
+
+      if (dryRun) {
+        console.log(`- #${post.id} would update transcript (${transcriptMarkdown.length} chars)`);
+      } else {
+        writeFileSync(docPath, nextMarkdown, 'utf8');
+        console.log(`- #${post.id} updated transcript (${transcriptMarkdown.length} chars)`);
+      }
+      updated += 1;
+    } catch (error) {
+      failures.push({ id: post.id, sourceUrl: post.sourceUrl, message: error?.message || String(error) });
+      console.warn(`- #${post.id} failed: ${error?.message || error}`);
+    }
+  }
+
+  console.log('');
+  console.log(`${dryRun ? 'Dry run: ' : ''}checked=${checked} found=${found} updated=${updated} skippedExisting=${skippedExisting} missingDoc=${missingDoc} failed=${failures.length}`);
+  if (failures.length > 0) {
+    console.log('Failures:');
+    failures.forEach((failure) => console.log(`- #${failure.id} ${failure.sourceUrl}: ${failure.message}`));
+  }
+}
+
+async function scrapeTranscriptOnly(cdp, url) {
+  await cdp.send('Page.navigate', { url });
+  await waitForPage(cdp);
+  await autoScroll(cdp);
+  const beforeTranscriptText = await evaluate(cdp, () => document.body?.innerText || '');
+  const transcriptOpened = await openTranscriptIfAvailableStable(cdp);
+  if (!transcriptOpened) return '';
+  if (debug) console.log('Opened transcript panel.');
+  return extractTranscriptMarkdown(cdp, beforeTranscriptText);
+}
+
+function readDocIfExists(fileName) {
+  const docPath = resolve(docsDir, fileName);
+  if (!existsSync(docPath)) return '';
+  return readFileSync(docPath, 'utf8');
+}
+
+function hasTranscriptSection(markdown) {
+  return /^##\s*\uC2A4\uD06C\uB9BD\uD2B8\s*$/m.test(String(markdown || ''));
+}
+
+function upsertTranscriptSection(markdown, transcriptMarkdown) {
+  const body = String(markdown || '').trimEnd();
+  const transcript = String(transcriptMarkdown || '').trim();
+  if (!transcript) return `${body}\n`;
+
+  const headingPattern = /^##\s*\uC2A4\uD06C\uB9BD\uD2B8\s*$/m;
+  const match = body.match(headingPattern);
+  const nextSection = `${TRANSCRIPT_HEADING}\n\n${transcript}`;
+  if (!match) return `${body}\n\n${nextSection}\n`;
+
+  const before = body.slice(0, match.index).trimEnd();
+  const afterStart = match.index + match[0].length;
+  const after = body.slice(afterStart);
+  const nextHeading = after.match(/\n##\s+/);
+  const suffix = nextHeading ? after.slice(nextHeading.index).trimStart() : '';
+  return [before, nextSection, suffix].filter(Boolean).join('\n\n').trimEnd() + '\n';
 }
 
 async function updateExistingPosts({ cdp, posts, ids }) {
@@ -1045,8 +1160,19 @@ async function extractTranscriptMarkdown(cdp, beforeTranscriptText) {
         const text = String(line || '').trim();
         return /^(?:\d+\s*(?:\uC77C|\uC2DC\uAC04|\uBD84)\s*\uC804|\d+\s*\uD68C\uCC28|(?:\uD22C\uC790(?:\uC655|\uCD08\uBCF4|\uD559\uC2B5))[_-])/u.test(text);
       });
-      if (stopIndex < 0) return cleaned;
-      return cleaned.slice(0, Math.max(0, stopIndex - 1));
+      const trimmedAtComment = stopIndex < 0 ? cleaned : cleaned.slice(0, Math.max(0, stopIndex - 1));
+      const thanksIndex = findTrailingThanksIndex(trimmedAtComment);
+      if (thanksIndex < 0) return trimmedAtComment;
+      return trimmedAtComment.slice(0, thanksIndex + 1);
+    }
+
+    function findTrailingThanksIndex(lines) {
+      const searchStart = Math.max(0, lines.length - 12);
+      for (let index = lines.length - 1; index >= searchStart; index -= 1) {
+        const text = String(lines[index] || '').trim();
+        if (/\uAC10\uC0AC(?:\uD569\uB2C8\uB2E4|\uB4DC\uB9BD\uB2C8\uB2E4)|\uACE0\uB9D9\uC2B5\uB2C8\uB2E4|媛먯궗/.test(text)) return index;
+      }
+      return -1;
     }
   }, beforeTranscriptText);
 
