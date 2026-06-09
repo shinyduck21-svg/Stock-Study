@@ -1033,6 +1033,183 @@ a {
   }
 }
 
+@media (max-width: 600px) {
+  .allocation-tool {
+    padding: 14px;
+  }
+
+  .allocation-detail {
+    gap: 14px;
+  }
+
+  .allocation-detail-header {
+    align-items: stretch;
+  }
+
+  .allocation-back-btn,
+  .allocation-reset-btn {
+    min-height: 38px;
+    padding: 8px 10px;
+    font-size: 0.88rem;
+  }
+
+  .allocation-title {
+    font-size: 1.08rem;
+    line-height: 1.4;
+  }
+
+  .allocation-controls {
+    display: grid;
+    gap: 10px;
+  }
+
+  .allocation-controls label,
+  .allocation-controls input,
+  .allocation-total-chip {
+    width: 100%;
+  }
+
+  .allocation-table-wrap {
+    overflow-x: visible;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .allocation-table,
+  .allocation-table thead,
+  .allocation-table tbody,
+  .allocation-table tr,
+  .allocation-table td {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .allocation-table {
+    border-collapse: separate;
+    background: transparent;
+  }
+
+  .allocation-table thead {
+    display: none;
+  }
+
+  .allocation-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .allocation-table .allocation-item-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 8px;
+    background: hsl(var(--surface));
+  }
+
+  .allocation-table .allocation-group-cell {
+    display: none;
+  }
+
+  .allocation-table .allocation-name-cell,
+  .allocation-table .allocation-ratio-cell,
+  .allocation-table .allocation-amount-cell {
+    border: 0;
+    padding: 0;
+  }
+
+  .allocation-table .allocation-name-cell {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    font-size: 0.96rem;
+    line-height: 1.35;
+    word-break: keep-all;
+  }
+
+  .allocation-name-cell::before {
+    content: attr(data-group);
+    width: fit-content;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #1f3c67;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 900;
+    line-height: 1.2;
+  }
+
+  .allocation-table .allocation-ratio-cell,
+  .allocation-table .allocation-amount-cell {
+    display: grid;
+    gap: 4px;
+    background: transparent;
+  }
+
+  .allocation-ratio-cell::before,
+  .allocation-amount-cell::before {
+    content: attr(data-label);
+    color: hsl(var(--text-muted));
+    font-size: 0.72rem;
+    font-weight: 900;
+    text-align: left;
+  }
+
+  .allocation-ratio-field {
+    justify-content: flex-start;
+    width: auto;
+  }
+
+  .allocation-ratio-input {
+    width: 78px;
+  }
+
+  .allocation-amount-cell {
+    min-width: 0;
+    text-align: left;
+  }
+
+  .allocation-table .allocation-summary-row,
+  .allocation-table .allocation-total-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--border));
+  }
+
+  .allocation-table .allocation-summary-row td,
+  .allocation-table .allocation-total-row td {
+    display: block;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    white-space: nowrap;
+  }
+
+  .allocation-summary-row td:first-child,
+  .allocation-total-row td:first-child {
+    text-align: left;
+    white-space: normal;
+  }
+
+  .allocation-total-row {
+    background: #1f3c67;
+    color: #fff;
+    border-color: #1f3c67;
+  }
+
+  .allocation-total-row td {
+    color: #fff;
+  }
+}
+
 /* Premium Custom Audio Player Styles */
 .premium-audio-player {
   padding: 24px;

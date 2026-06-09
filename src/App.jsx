@@ -1283,14 +1283,14 @@ const App = () => {
                               const showGroup = !allocationGroupSeen[row.group];
                               allocationGroupSeen[row.group] = true;
                               return (
-                                <tr key={row.key}>
+                                <tr className="allocation-item-row" key={row.key}>
                                   {showGroup && (
                                     <td className="allocation-group-cell" rowSpan={allocationGroupRowSpan[row.group]}>
                                       {row.group}
                                     </td>
                                   )}
-                                  <td className="allocation-name-cell">{row.name}</td>
-                                  <td>
+                                  <td className="allocation-name-cell" data-group={row.group}>{row.name}</td>
+                                  <td className="allocation-ratio-cell" data-label="비율">
                                     <div className="allocation-ratio-field">
                                       <input
                                         className="allocation-ratio-input"
@@ -1303,7 +1303,7 @@ const App = () => {
                                       <span>%</span>
                                     </div>
                                   </td>
-                                  <td className="allocation-amount-cell">{formatWon(row.amount)}</td>
+                                  <td className="allocation-amount-cell" data-label="금액">{formatWon(row.amount)}</td>
                                 </tr>
                               );
                             })}
