@@ -11,8 +11,10 @@ createRoot(document.getElementById('root')).render(
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/Stock-Study/sw.js').catch((error) => {
-      console.error('Service worker registration failed:', error);
-    });
+    navigator.serviceWorker.register('/Stock-Study/sw.js')
+      .then((registration) => registration.update())
+      .catch((error) => {
+        console.error('Service worker registration failed:', error);
+      });
   });
 }
