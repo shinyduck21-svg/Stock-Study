@@ -1,5 +1,58 @@
 [
     {
+        "id": 305,
+        "title": "1029화. [투자학교] 더욱 단단하게, 앞으로 나아가봅시다.",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_305.md",
+        "sourceUrl": "https://us-insight.com/secrets/25403"
+    },
+    {
+        "id": 306,
+        "title": "1030화. 🙋 6월 11일 담쌤의 언제나 데이트ㅣ우리시장 마감 언제나 데이트 청해드립니다.",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_306.md",
+        "sourceUrl": "https://us-insight.com/secrets/25404"
+    },
+    {
+        "id": 307,
+        "title": "1028화. 🙋 6월 11일 담쌤의 언제나 데이트ㅣ급우님들의 너그러운 맘으로 조정구간을 이겨내 봅시다",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_307.md",
+        "sourceUrl": "https://us-insight.com/secrets/25307"
+    },
+    {
+        "id": 308,
+        "title": "530화. 🌞 6월 11일 목요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_308.md",
+        "sourceUrl": "https://us-insight.com/secrets/25292",
+        "audioUrl": "https://drive.google.com/file/d/1Lt3IWE-JXw8p8OCWEW6RpWFr9dGG524r"
+    },
+    {
         "id": 300,
         "title": "1027화. 🙋 6월10 일 담쌤의 언제나 데이트",
         "time": "방금 전",

@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>투자학교 콘텐츠 보고서 | JSON ID 268-304</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17212f;
+      --muted: #5d6878;
+      --line: #d9e0ea;
+      --paper: #f6f8fb;
+      --panel: #ffffff;
+      --navy: #17324d;
+      --teal: #0f766e;
+      --amber: #a15c07;
+      --rose: #a23b55;
+      --blue: #265d97;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
+      line-height: 1.65;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 44px 0 72px;
+    }
+
+    header {
+      padding: 34px 0 26px;
+      border-bottom: 3px solid var(--navy);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 42px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+      color: var(--navy);
+      font-size: 24px;
+    }
+
+    h3 {
+      margin: 26px 0 10px;
+      color: #22364d;
+      font-size: 19px;
+    }
+
+    h4 {
+      margin: 18px 0 8px;
+      color: var(--teal);
+      font-size: 16px;
+    }
+
+    p {
+      margin: 8px 0;
+    }
+
+    ul {
+      margin: 8px 0 0;
+      padding-left: 22px;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      background: var(--panel);
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eaf0f7;
+      color: #1c334d;
+      font-weight: 700;
+    }
+
+    .lead {
+      max-width: 860px;
+      color: #2d3d50;
+      font-size: 17px;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 4px 10px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .notice {
+      margin-top: 22px;
+      padding: 16px 18px;
+      border-left: 5px solid var(--amber);
+      background: #fff8eb;
+      color: #4b3520;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .card {
+      min-height: 100%;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .card strong {
+      color: var(--navy);
+    }
+
+    .tag {
+      display: inline-block;
+      margin: 0 4px 4px 0;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: #e8f3f2;
+      color: #0e5f59;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .day {
+      margin-top: 18px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .day h3 {
+      margin-top: 0;
+    }
+
+    .advice {
+      border-left: 5px solid var(--teal);
+      background: #f0faf8;
+    }
+
+    .risk {
+      border-left: 5px solid var(--rose);
+      background: #fff3f5;
+    }
+
+    .info {
+      border-left: 5px solid var(--blue);
+      background: #f1f6fc;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 860px) {
+      main {
+        width: min(100% - 22px, 1120px);
+        padding-top: 24px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>JSON ID 268-304 투자 콘텐츠 보고서</h1>
+      <p class="lead">2026년 6월 1일~10일 게시글과 스크립트를 기준으로 시장 해석, 투자 조언, 종합 의견을 보고용으로 재구성했다. 본 보고서는 원문 콘텐츠의 요지 정리이며, 실시간 시세나 외부 최신 데이터는 반영하지 않았다.</p>
+      <div class="meta">
+        <span class="pill">대상: public/data/posts.json id 268-304</span>
+        <span class="pill">본문: public/docs/briefing_268.md-briefing_304.md</span>
+        <span class="pill">작성 기준일: 2026-06-11</span>
+      </div>
+      <div class="notice">
+        투자 판단에 직접 쓰기 전에는 현재 주가, 환율, 금리, 기업 실적 전망치, 공시 여부를 별도로 확인해야 한다. 원문에 포함된 일부 수치와 이벤트는 콘텐츠 작성 시점의 설명으로 보아야 한다.
+      </div>
+    </header>
+
+    <section>
+      <h2>1. 전체 핵심 요약</h2>
+      <div class="grid">
+        <div class="card">
+          <strong>시장 큰 흐름</strong>
+          <p>단기 변동성은 이란 전쟁, CPI, 금리, 스페이스X IPO 같은 이벤트와 수급으로 확대됐지만, 원문은 이를 펀더멘탈 훼손보다 심리와 자금 이동의 문제로 해석한다.</p>
+        </div>
+        <div class="card">
+          <strong>주도 산업</strong>
+          <p>AI 인프라, 반도체, 메모리, HBM, LPDDR5/SoCAM, 네트워크, 스토리지, 첨단 패키징이 반복적으로 핵심 축으로 제시된다.</p>
+        </div>
+        <div class="card">
+          <strong>투자 태도</strong>
+          <p>한 번에 따라 사기보다 분할, 분산, 비중관리, 손절, 수익은 길게 끌고 가는 습관이 강조된다. 가격보다 기업 이익과 밸류에이션을 우선한다.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. 일자별 중요 요약</h2>
+
+      <article class="day">
+        <h3>6월 1일 | id 268-272, 280</h3>
+        <p><span class="tag">코스피</span><span class="tag">AI PC</span><span class="tag">메모리</span><span class="tag">MSCI 리밸런싱</span></p>
+        <ul>
+          <li>금요일 미국 증시는 사상 최고가를 경신했고, MSCI 반기 리밸런싱으로 대형주와 신규 편입주 간 수급 이동이 있었을 가능성이 언급됐다.</li>
+          <li>전쟁 리스크 완화 기대, 유가 하락, 10년물 금리 4.5% 하회 등 매크로 부담이 일부 완화된 것으로 해석했다.</li>
+          <li>AI PC와 피지컬 AI 확산이 GPU, 메모리, 네트워크, 패키징 수요를 확대할 수 있다는 논리가 제시됐다.</li>
+          <li>코스피 8000, 제2의 삼전닉스, 낙폭과대주 순환매 같은 기사성 표현은 그대로 추종하기보다 펀더멘탈로 검증해야 한다고 정리했다.</li>
+          <li>6월 1일 2회차 라이브 수업은 AI 산업의 자금 이동, 고평가 자산보다 실적 확인 기업으로 이동하는 흐름, 온디바이스 AI와 물리적 AI를 다뤘다.</li>
+        </ul>
+      </article>
+
+      <article class="day">
+        <h3>6월 2일 | id 276-279</h3>
+        <p><span class="tag">AI 반도체</span><span class="tag">전쟁 리스크</span><span class="tag">삼성생명</span><span class="tag">알파벳 증자</span></p>
+        <ul>
+          <li>이란 관련 긴장으로 유가는 올랐지만, 시장은 AI 반도체 펀더멘탈을 중심으로 차별적 랠리를 이어간 것으로 설명됐다.</li>
+          <li>마벨, TSMC, 샌디스크, 마이크론, 브로드컴, 메모리 ETF, 엔비디아 등 반도체 생태계가 강세로 언급됐다.</li>
+          <li>삼성생명은 삼성전자 지분 가치 대비 본업 가치가 낮게 평가되고 있다는 관점으로 소개됐다. 삼성화재, 삼성물산도 삼성전자 지분 가치 영향권으로 언급됐다.</li>
+          <li>알파벳의 대규모 증자와 버크셔 참여 가능성은 AI 인프라 투자를 위한 자금 조달 신호로 해석됐다.</li>
+          <li>엔비디아의 베라 루빈, LPDDR5/SoCAM 수요, AI PC 확산이 메모리 수급의 새로운 축으로 제시됐다.</li>
+        </ul>
+      </article>
+
+      <article class="day">
+        <h3>6월 3일 | id 273-275, 289</h3>
+        <p><span class="tag">비중관리</span><span class="tag">홍매화반</span><span class="tag">브로드컴</span><span class="tag">중동 리스크</span></p>
+        <ul>
+          <li>투자학교 3년의 성과를 돌아보며 상승장에서도 일희일비하지 않는 투자 습관과 비중관리의 필요성이 강조됐다.</li>
+          <li>홍매화반은 투자학교 학습기업 중심으로 분산, 분할매매, 리스크관리, 헤어컷, 채권까지 포함한 자산 비중관리를 배우는 과정으로 설명됐다.</li>
+          <li>브로드컴 실적 이슈는 기대치가 높았던 데 따른 변동성으로 보며, 실적 자체가 나쁘거나 전망이 훼손된 것은 아니라는 해석이 제시됐다.</li>
+          <li>이스라엘-레바논 휴전, 미국 하원의 대이란 군사행동 제한 결의 등 전쟁 리스크 완화 단서도 정리됐다.</li>
+          <li>선거일 글에서는 민주주의의 1인 1표와 자본주의의 자본 영향력을 대비하며, 자본시장에서는 학습과 습관이 중요하다는 메시지가 담겼다.</li>
+        </ul>
+      </article>
+
+      <article class="day">
+        <h3>6월 4일 | id 290</h3>
+        <p><span class="tag">금리</span><span class="tag">브로드컴</span><span class="tag">코스피 밸류에이션</span></p>
+        <ul>
+          <li>미국 제조업, 서비스업, 민간고용 지표가 좋게 나오며 금리 상승 가능성이 제기됐다. 강한 지표는 경기에는 긍정적이지만 금리에는 부담으로 작용할 수 있다.</li>
+          <li>브로드컴은 컨센서스를 충족했지만 기대치를 크게 뛰어넘지 못해 시간외 변동성이 발생한 것으로 요약된다.</li>
+          <li>골드만삭스의 코스피 12000 전망과 코스피 선행 PER 8.2배 언급은 한국 증시 저평가 논리를 보강하는 근거로 사용됐다.</li>
+          <li>코스닥은 상대적으로 PER이 높아 밸류에이션 부담이 크다고 평가됐다.</li>
+          <li>반도체 강세는 유지되지만, 같은 테마라도 기업 규모, 이익 증가율, 밸류에이션에 따라 차별화될 수 있다고 설명했다.</li>
+        </ul>
+      </article>
+
+      <article class="day">
+        <h3>6월 5일 | id 286-287</h3>
+        <p><span class="tag">환율</span><span class="tag">수급</span><span class="tag">HBM</span><span class="tag">달러자산</span></p>
+        <ul>
+          <li>원화 환율 상승은 반도체 수출 흑자에도 불구하고 국민연금 해외투자, 개인 해외투자, 외국인 리밸런싱 매도 등 자금 흐름이 복합적으로 작용한 것으로 설명됐다.</li>
+          <li>한국 기업이 글로벌 빅테크 AI 투자 사이클의 공급망에 들어가면서 펀더멘탈은 강해졌지만, 외국인 매도와 해외투자 확대로 환율 압력이 생길 수 있다고 봤다.</li>
+          <li>젠슨 황과 한국 기업의 협력, HBM4E/HBM5, SK하이닉스와 삼성전자 공급망 다변화가 장기 반도체 수요의 핵심 신호로 정리됐다.</li>
+          <li>변동성이 큰 한국 시장만 보유할 때 심리적 흔들림이 커질 수 있으므로 달러 자산 일부 보유가 언급됐다.</li>
+          <li>반도체 반등이 나왔다고 한 번에 매수하지 말고, CPI와 FOMC를 보며 천천히 분할 접근하라는 메시지가 반복됐다.</li>
+        </ul>
+      </article>
+
+      <article class="day">
+        <h3>6월 6일 | id 284-285, 288</h3>
+        <p><span class="tag">총동창회</span><span class="tag">조정</span><span class="tag">투자 원칙</span></p>
+        <ul>
+          <li>현충일과 총동창회 메시지에서 공동체, 장기 학습, 올바른 투자 문화가 강조됐다.</li>
+          <li>미국 고용 서프라이즈로 시장이 눌림목 조정을 받았으나, 큰 상승 흐름 속 자연스러운 변동으로 해석했다.</li>
+          <li>2023년 박스피와 사팔사팔 중심 시장에서 출발해, AI와 반도체 중심의 장기 학습으로 투자 관점을 바꿔온 과정이 회고됐다.</li>
+          <li>온라인 생중계 안내 등 행정성 콘텐츠는 투자 판단보다 커뮤니티 운영 정보로 분류된다.</li>
+        </ul>
+      </article>
+
+      <article class="day">
+        <h3>6월 7일 | id 281-283</h3>
+        <p><span class="tag">금리 인상기</span><span class="tag">변동성</span><span class="tag">예습자료</span></p>
+        <ul>
+          <li>총동창회 이후 감사 메시지와 함께, 투자 인사이트와 정보는 낮은 곳으로 흘러야 한다는 철학적 메시지가 담겼다.</li>
+          <li>미국 금리 우려로 기술주 중심의 조정이 발생했고, 2022년 6월~2023년 7월 금리 인상기 데이터를 참고해 조정 폭과 기간을 점검해야 한다고 했다.</li>
+          <li>여름학기 세 번째 기업분석도감은 중동 지정학 리스크, 유가와 환율 변동, 코스피 저평가, 코스닥 조정, 이익 전망치 상향을 다뤘다.</li>
+          <li>핵심 메시지는 시장 예측보다 이익 전망과 밸류에이션으로 옥석을 가리는 데 있다.</li>
+        </ul>
+      </article>
+
+      <article class="day">
+        <h3>6월 8일 | id 291-294</h3>
+        <p><span class="tag">급락</span><span class="tag">금리</span><span class="tag">반도체 지수</span><span class="tag">라이브 수업</span></p>
+        <ul>
+          <li>코스피 -8.29%, 코스닥 -9.08%의 큰 폭 조정이 언급됐고, 미국 선물은 상대적으로 안정적인 흐름으로 제시됐다.</li>
+          <li>미국 고용 호조로 금리 인상 가능성이 커지며, 금리 상승이 성장주 멀티플 하락으로 이어질 수 있다는 설명이 나왔다.</li>
+          <li>필라델피아 반도체 지수 급락과 국내 시장 충격 가능성이 언급됐지만, 반도체 기업의 이익이 훼손된 것은 아니라는 해석이다.</li>
+          <li>3회차 라이브 수업에서는 당일 매매 비중이 큰 국내 시장 구조, 단기 변동성 발생 원리, 시간을 활용하는 투자자 자세를 다뤘다.</li>
+          <li>일간 가격보다 주간, 월간, 연간 이익 방향성이 중요하다는 메시지가 반복됐다.</li>
+        </ul>
+      </article>
+
+      <article class="day">
+        <h3>6월 9일 | id 295-299</h3>
+        <p><span class="tag">CPI 대기</span><span class="tag">반도체 반등</span><span class="tag">테라플롭스</span><span class="tag">젠슨 황</span></p>
+        <ul>
+          <li>CPI 발표를 앞두고 월요일 급락과 화요일 반등에 취해 한 번에 매수하지 말라는 경계가 제시됐다.</li>
+          <li>반도체는 반등했지만, 오늘 좋다고 곧바로 추세 확정으로 보지 말고 변동성을 감안해야 한다고 했다.</li>
+          <li>젠슨 황 효과로 같은 테마에 묶인 기업들이 동반 조정받았으나, PER과 적자 여부, 이익 성장률이 다르므로 결국 차별화될 것이라고 봤다.</li>
+          <li>테라플롭스 설명 글은 AI 컴퓨팅 성능 단위를 이해하도록 돕는 학습성 콘텐츠이며, AI 하드웨어 경쟁의 기술적 배경을 보강한다.</li>
+          <li>미국 FOMC, CPI, 연준의 물가 목표와 고용 지표를 시장 변동의 핵심 관찰 포인트로 제시했다.</li>
+        </ul>
+      </article>
+
+      <article class="day">
+        <h3>6월 10일 | id 300-304</h3>
+        <p><span class="tag">CPI</span><span class="tag">스페이스X IPO</span><span class="tag">AI IPO</span><span class="tag">삼성 AI 전환</span></p>
+        <ul>
+          <li>CPI는 근원 MOM 0.2%로 컨센서스 0.3%를 하회했고, 주요 YOY 수치는 컨센서스와 부합해 불확실성 해소로 해석됐다.</li>
+          <li>스페이스X 상장과 CPI 대기 심리가 수급 변동성을 키운 것으로 보며, 두 이벤트가 지나가면 시장 부담이 완화될 수 있다고 봤다.</li>
+          <li>미국 기술주는 조정받았지만 금리와 유가가 내려간 가운데 발생한 조정이어서 펀더멘탈 훼손보다 IPO 수급 영향으로 해석했다.</li>
+          <li>오픈AI, 엔트로픽 등 AI 기업 IPO 가능성은 AI 산업이 비상장 실험 단계를 넘어 공개시장에서 가치평가를 받는 국면으로 이동하는 신호로 정리됐다.</li>
+          <li>삼성그룹의 AI 대전환, 외부 생성형 AI 도입, 전담 조직 신설은 기업용 AI 확산과 반도체 수요의 장기 기반으로 제시됐다.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section>
+      <h2>3. 스크립트 내 투자 조언 정리</h2>
+      <div class="card advice">
+        <h3>반복된 원칙</h3>
+        <ul>
+          <li><strong>분할 매수:</strong> 반도체나 AI 주도주가 반등해도 한 번에 전액 매수하지 말고 이벤트와 가격 변동을 나누어 접근한다.</li>
+          <li><strong>분산 투자:</strong> 한국 시장 변동성이 클 때 달러 자산과 해외 대형 자산을 일부 보유해 변동성을 낮춘다.</li>
+          <li><strong>비중관리:</strong> 수익이 크게 난 종목은 헤어컷을 검토하고, 비중이 낮은 핵심 기업은 조정 시 분할 접근을 고려한다.</li>
+          <li><strong>손실은 짧게:</strong> PER, 내년 PER, 매출 및 이익 성장률을 비교했을 때 학습기업보다 비싸고 성장도 약하면 희망으로 버티지 말고 교체를 검토한다.</li>
+          <li><strong>수익은 길게:</strong> 기업 이익의 방향성이 유지되는 경우 단기 가격 흔들림보다 시간에 기대는 전략을 우선한다.</li>
+          <li><strong>아는 것에만 투자:</strong> 이해하지 못한 기업, 테마만 따라가는 기업, 소규모 소부장 종목은 피하고 학습한 기업 중심으로 판단한다.</li>
+          <li><strong>밸류에이션 확인:</strong> 같은 AI/로봇/반도체 테마라도 PER 15배, 22배, 50배, 적자, 90배 기업은 위험도가 다르므로 같은 테마로 묶지 않는다.</li>
+          <li><strong>낙폭과대주 경계:</strong> 많이 빠졌다는 이유만으로 사지 않는다. 낙폭이 큰 데는 이유가 있을 수 있으며, 펀더멘탈로 확인해야 한다.</li>
+        </ul>
+      </div>
+
+      <div class="card risk">
+        <h3>주의해야 할 행동</h3>
+        <ul>
+          <li>급락 다음 날 반등만 보고 “놓칠까 봐” 한방 매수하는 행동.</li>
+          <li>언론의 계절성, 순환매, 제2의 주도주 표현을 검증 없이 따라가는 행동.</li>
+          <li>이익 성장 없이 테마만 붙은 고PER 또는 적자 기업을 같은 AI 수혜주로 취급하는 행동.</li>
+          <li>단기 호가와 뉴스에 따라 포트폴리오 핵심 축을 계속 바꾸는 행동.</li>
+          <li>수익이 난 뒤 자만하거나, 손실이 난 뒤 근거 없는 희망으로 물타기하는 행동.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. 투자 관련 상세 정보</h2>
+      <h3>AI 반도체 밸류체인</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>영역</th>
+            <th>원문에서 제시된 핵심 논리</th>
+            <th>점검할 투자 포인트</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GPU/AI 가속기</td>
+            <td>엔비디아 신제품, AI PC, 베라 루빈, 데이터센터와 물리적 AI 확산이 시장을 이끈다.</td>
+            <td>신제품 공급 일정, 고객사 CAPEX, 공급망 병목, 실제 주문량, 경쟁사 진입.</td>
+          </tr>
+          <tr>
+            <td>메모리</td>
+            <td>HBM뿐 아니라 LPDDR5/SoCAM, 고용량 D램, 낸드 수요가 커진다. 마이크론, 샌디스크, 삼성전자, SK하이닉스가 반복 언급된다.</td>
+            <td>가격 상승률, 재고, HBM 인증, LPDDR 수급, 고객사별 공급계약, 영업이익률.</td>
+          </tr>
+          <tr>
+            <td>네트워크/커스텀칩</td>
+            <td>브로드컴과 마벨은 AI 네트워크와 ASIC 수요의 핵심 축으로 제시되지만 밸류에이션과 기업 규모 차이가 있다.</td>
+            <td>AI 매출 비중, 신규 고객, 마진, PER/PSR, 기대치 대비 실적 서프라이즈 여부.</td>
+          </tr>
+          <tr>
+            <td>첨단 패키징/부품</td>
+            <td>CoWoS, 하이브리드 본딩, 플립칩 BGA, MLCC, 카메라 모듈 등이 AI 시스템 효율의 구성요소로 언급된다.</td>
+            <td>고객 집중도, 단가 협상력, 을의 위치에 따른 마진 압박, 기술 진입장벽.</td>
+          </tr>
+          <tr>
+            <td>AI 소프트웨어/플랫폼</td>
+            <td>오픈AI, 엔트로픽, 코어위브, 오라클, 클라우드 기업은 AI 인프라 수요를 증명하는 신호로 사용된다.</td>
+            <td>상장 시 가치평가, 매출 성장, 컴퓨팅 비용, 현금흐름, 공개시장 비교 밸류에이션.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>매크로와 수급 체크포인트</h3>
+      <div class="grid">
+        <div class="card">
+          <strong>금리</strong>
+          <p>고용과 물가가 강하면 연준이 금리 인상 또는 고금리 유지를 검토할 수 있다. 금리 상승은 성장주 멀티플을 압박하지만, 이익 증가가 더 크면 장기 주가를 지탱할 수 있다는 관점이다.</p>
+        </div>
+        <div class="card">
+          <strong>CPI</strong>
+          <p>6월 10일 CPI는 근원 MOM이 컨센서스를 하회해 불확실성 해소로 해석됐다. 발표 전후에는 반등과 급락 모두 과잉 반응일 수 있어 분할 접근이 강조된다.</p>
+        </div>
+        <div class="card">
+          <strong>환율</strong>
+          <p>반도체 수출 흑자에도 국민연금과 개인의 해외투자, 외국인 리밸런싱 매도는 원화 약세 요인으로 작용할 수 있다. 달러 자산 일부 보유가 변동성 완충 장치로 제안됐다.</p>
+        </div>
+        <div class="card">
+          <strong>IPO 수급</strong>
+          <p>스페이스X, 오픈AI, 엔트로픽 같은 대형 IPO는 기존 기술주에서 단기 자금을 빼내는 수급 이벤트가 될 수 있다. 원문은 이를 펀더멘탈 악화와 구분했다.</p>
+        </div>
+        <div class="card">
+          <strong>전쟁과 유가</strong>
+          <p>이란 관련 지정학 리스크는 유가와 금리를 흔들 수 있다. 다만 원문에서는 시장이 전쟁 뉴스보다 AI 반도체 펀더멘탈에 더 강하게 반응하는 흐름이 관찰됐다.</p>
+        </div>
+        <div class="card">
+          <strong>국내 시장 구조</strong>
+          <p>국내 시장은 당일 매매와 테마성 수급 비중이 커서 사이드카 수준의 변동성이 발생할 수 있다. 그래서 예측보다 시간과 비중관리의 중요성이 커진다.</p>
+        </div>
+      </div>
+
+      <h3>본문 기준 주요 투자 후보군과 관찰 포인트</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>분류</th>
+            <th>언급 기업/자산</th>
+            <th>보고서 관점</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>국내 대형 반도체</td>
+            <td>삼성전자, SK하이닉스</td>
+            <td>AI 메모리와 범용 메모리 동시 수혜. HBM, LPDDR5/SoCAM, 고객사 인증, 설비투자와 ASP를 지속 확인해야 한다.</td>
+          </tr>
+          <tr>
+            <td>국내 반도체 부품</td>
+            <td>삼성전기, LG이노텍</td>
+            <td>AI 서버 부품, MLCC, 플립칩 BGA, 카메라 관련 기대가 있으나 급등 후 밸류 부담과 비중 조절 필요성이 언급됐다.</td>
+          </tr>
+          <tr>
+            <td>미국 AI 반도체</td>
+            <td>엔비디아, 마벨, 브로드컴, 마이크론, 샌디스크</td>
+            <td>주도 산업의 핵심 후보군. 마벨은 장기 성장성, 브로드컴은 기대치와 밸류, 마이크론과 샌디스크는 메모리 가격 사이클을 확인해야 한다.</td>
+          </tr>
+          <tr>
+            <td>파운드리/장비</td>
+            <td>TSMC, ASML, 인텔</td>
+            <td>TSMC는 AI 공급망 핵심. 인텔은 알파벳 TPU, 엔비디아 백업 파운드리 가능성 같은 뉴스로 반등했지만 실질 수주와 수익성을 확인해야 한다.</td>
+          </tr>
+          <tr>
+            <td>플랫폼/클라우드</td>
+            <td>알파벳, 아마존, 마이크로소프트, 오라클, 네이버</td>
+            <td>AI 인프라 CAPEX의 수요자이자 클라우드/AI 서비스 공급자. 증자, 채권 발행, 데이터센터 투자 규모가 반도체 수요와 연결된다.</td>
+          </tr>
+          <tr>
+            <td>기타 테마</td>
+            <td>로봇, 자동차 전장, 방산, 2차전지</td>
+            <td>같은 테마라도 PER, 흑자 여부, 성장률이 다르므로 구분해야 한다. 낙폭과대만으로 접근하지 않는다.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>5. 종합 의견</h2>
+      <div class="card info">
+        <p>id 268-304의 핵심은 “AI 반도체 장기 사이클은 유지되지만, 단기 가격은 금리, CPI, 전쟁, IPO 수급, 리밸런싱에 크게 흔들릴 수 있다”는 것이다. 원문은 조정을 공포로만 보지 않고, 펀더멘탈이 유지되는 기업에는 기회가 될 수 있다고 본다. 다만 그 기회는 한방 매수로 잡는 것이 아니라 분할, 분산, 비중관리로 접근해야 한다.</p>
+        <p>가장 강한 투자 축은 메모리 반도체와 AI 인프라다. HBM만이 아니라 LPDDR5/SoCAM, 스토리지, 네트워크, 첨단 패키징, 데이터센터 전력과 클라우드까지 연결해 봐야 한다. 특히 기업별로는 같은 AI 테마 안에서도 밸류에이션과 이익 증가율이 다르기 때문에, “AI 수혜주”라는 이름만으로 같은 비중을 줄 수 없다.</p>
+        <p>보고서 기준의 실무적 결론은 세 가지다. 첫째, 핵심 기업의 이익 전망이 훼손되지 않았는지 매주 확인한다. 둘째, CPI/FOMC/대형 IPO 같은 이벤트 전후에는 매수 속도를 낮춘다. 셋째, 수익이 난 포지션은 비중을 관리하고, 손실 포지션은 더 좋은 기업과 비교해 교체 여부를 냉정하게 판단한다.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>6. 추가 확인 필요 정보</h2>
+      <ul>
+        <li>각 기업의 최신 실적 컨센서스, 내년 PER, 매출 성장률, 영업이익률.</li>
+        <li>삼성전자와 SK하이닉스의 HBM4E/HBM5, LPDDR5/SoCAM 고객 인증과 공급 일정.</li>
+        <li>마벨, 브로드컴, 엔비디아, 마이크론, 샌디스크의 AI 관련 매출 비중과 다음 실적 발표 가이던스.</li>
+        <li>미국 10년물 금리, CPI, FOMC 점도표, 원/달러 환율, 유가의 최신 흐름.</li>
+        <li>스페이스X, 오픈AI, 엔트로픽 등 대형 IPO가 실제로 상장될 경우의 청약 규모와 기존 기술주 수급 영향.</li>
+        <li>국내 코스피와 코스닥의 선행 PER, 이익 전망치 상향/하향 비율, 외국인 수급.</li>
+      </ul>
+      <p class="small">원문 출처: public/data/posts.json 및 public/docs/briefing_268.md부터 briefing_304.md까지의 로컬 콘텐츠.</p>
+    </section>
+  </main>
+</body>
+</html>
