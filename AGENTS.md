@@ -10,6 +10,7 @@
 
 ## 규칙과 워크플로
 
+- `project-harness.md`
 - `harness/rules.md`
 - `harness/workflows.md`
 
