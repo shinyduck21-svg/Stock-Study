@@ -1,5 +1,58 @@
 [
     {
+        "id": 334,
+        "title": "47화. [학급반장 통신문] 기업분석도감, 이렇게 학습해보세요!",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_334.md",
+        "sourceUrl": "https://us-insight.com/secrets/26324"
+    },
+    {
+        "id": 335,
+        "title": "1043화. 🙋 6월 23일 담쌤의 언제나 데이트",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_335.md",
+        "sourceUrl": "https://us-insight.com/secrets/25683"
+    },
+    {
+        "id": 336,
+        "title": "530화. 🌞 6월 23일 화요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_336.md",
+        "sourceUrl": "https://us-insight.com/secrets/25842",
+        "audioUrl": "https://drive.google.com/file/d/1Mz0CbD0qLUWUuj79elncv5z7B7--tjX-"
+    },
+    {
+        "id": 333,
+        "title": "6월 22일(월) 5회차 라이브 수업 녹화본",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "video",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_333.md",
+        "url": "https://drive.google.com/file/d/15F1DqNYglaioX8VxpxYHcu6Yu1heo1pK/preview"
+    },
+    {
         "id": 325,
         "title": "1042화. 🙋 6월 22일 담쌤의 언제나 데이트ㅣ주가를 결정 짓는 건 그 무엇도 아닌 펀더멘탈입니다",
         "time": "방금 전",
