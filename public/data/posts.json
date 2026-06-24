@@ -1,5 +1,45 @@
 [
     {
+        "id": 337,
+        "title": "1045화. 🙋 6월 24일 담쌤의 언제나 데이트ㅣ저녁에 청해드리는 데이트 입니다.",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_337.md",
+        "sourceUrl": "https://us-insight.com/secrets/26105"
+    },
+    {
+        "id": 338,
+        "title": "1044화. 🙋 6월 24일 담쌤의 언제나 데이트ㅣ한번 급하게 오르면 대부분은 조정구간을 거칩니다.",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_338.md",
+        "sourceUrl": "https://us-insight.com/secrets/25684"
+    },
+    {
+        "id": 339,
+        "title": "543화. 🌞 6월 24일 수요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_339.md",
+        "sourceUrl": "https://us-insight.com/secrets/25843",
+        "audioUrl": "https://drive.google.com/file/d/13mU661sGNe7mNaW4KIgabJF6t-QxEWEu"
+    },
+    {
         "id": 334,
         "title": "47화. [학급반장 통신문] 기업분석도감, 이렇게 학습해보세요!",
         "time": "방금 전",
