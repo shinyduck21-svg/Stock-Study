@@ -551,7 +551,7 @@ async function autoScroll(cdp) {
 
 async function extractContentLinks(cdp, sourceUrl) {
   const source = new URL(sourceUrl);
-  const links = await evaluate(cdp, (sourceHref) => {
+  let links = await evaluate(cdp, (sourceHref) => {
     const sourceUrlObj = new URL(sourceHref);
     const seen = new Set();
     const html = document.documentElement.innerHTML || '';
@@ -594,12 +594,348 @@ async function extractContentLinks(cdp, sourceUrl) {
     }
   }, source.href);
 
+  if (links.length === 0) {
+    links = await extractContentLinksByRoleLinkClicking(cdp, source.href);
+  }
+
   if (debug) {
     console.log(`Found ${links.length} candidate links.`);
     links.slice(0, 20).forEach((link) => console.log(`- ${link.title} -> ${link.url}`));
   }
 
   return links;
+}
+
+async function extractContentLinksByRoleLinkClicking(cdp, sourceHref) {
+  const clickedLinks = [];
+  const seen = new Set();
+  const maxCandidates = Number.isFinite(limit) ? Math.min(Math.max(limit * 4, 10), 30) : 30;
+
+  for (let index = 0; index < maxCandidates; index += 1) {
+    await cdp.send('Page.navigate', { url: sourceHref });
+    await waitForPage(cdp);
+
+    const candidateCount = await evaluate(cdp, () => {
+      return getRoleLinkCandidates().length;
+
+      function getRoleLinkCandidates() {
+        const seen = new Set();
+        return Array.from(document.body?.querySelectorAll('[role="link"], .cursor-pointer') || [])
+          .map((element) => {
+            const rect = element.getBoundingClientRect();
+            const text = String(element.innerText || element.textContent || '').replace(/\s+/g, ' ').trim();
+            return { element, rect, text, top: rect.top + window.scrollY };
+          })
+          .filter((item) => {
+            if (item.rect.width < 120 || item.rect.height < 24) return false;
+            if (item.text.length < 20 || item.text.length > 700) return false;
+            if (!/(\uC77D\uC74C|\uC548\uC77D\uC74C)/.test(item.text)) return false;
+            if (!/(\uAE00|\uC624\uB514\uC624|\uC601\uC0C1)/.test(item.text)) return false;
+            if (/(\uACE0\uC815\uAE00|\uCD94\uCC9C\uC0C1\uD488|\uAD6C\uB3C5\s*\uC911\uC778|\uC774\uC6A9\uC57D\uAD00|\uAC1C\uC778\uC815\uBCF4\uCC98\uB9AC\uBC29\uCE68|\uD658\uBD88\uC815\uCC45)/.test(item.text)) return false;
+            return true;
+          })
+          .filter((item) => {
+            if (seen.has(item.element)) return false;
+            seen.add(item.element);
+            return true;
+          })
+          .sort((a, b) => a.top - b.top);
+      }
+    });
+    if (index >= candidateCount) break;
+
+    const beforeUrls = await getOpenContentTabUrls(sourceHref);
+    const clickResult = await evaluate(cdp, (candidateIndex) => {
+      const candidates = getRoleLinkCandidates();
+      const item = candidates[candidateIndex];
+      if (!item) return { clicked: false, count: candidates.length };
+
+      item.element.scrollIntoView({ block: 'center', inline: 'center' });
+      item.element.click();
+      return {
+        clicked: true,
+        count: candidates.length,
+        title: cleanTitle(item.text),
+      };
+
+      function getRoleLinkCandidates() {
+        const seen = new Set();
+        return Array.from(document.body?.querySelectorAll('[role="link"], .cursor-pointer') || [])
+          .map((element) => {
+            const rect = element.getBoundingClientRect();
+            const text = String(element.innerText || element.textContent || '').replace(/\s+/g, ' ').trim();
+            return { element, rect, text, top: rect.top + window.scrollY };
+          })
+          .filter((candidate) => {
+            if (candidate.rect.width < 120 || candidate.rect.height < 24) return false;
+            if (candidate.text.length < 20 || candidate.text.length > 700) return false;
+            if (!/(\uC77D\uC74C|\uC548\uC77D\uC74C)/.test(candidate.text)) return false;
+            if (!/(\uAE00|\uC624\uB514\uC624|\uC601\uC0C1)/.test(candidate.text)) return false;
+            if (/(\uACE0\uC815\uAE00|\uCD94\uCC9C\uC0C1\uD488|\uAD6C\uB3C5\s*\uC911\uC778|\uC774\uC6A9\uC57D\uAD00|\uAC1C\uC778\uC815\uBCF4\uCC98\uB9AC\uBC29\uCE68|\uD658\uBD88\uC815\uCC45)/.test(candidate.text)) return false;
+            return true;
+          })
+          .filter((candidate) => {
+            if (seen.has(candidate.element)) return false;
+            seen.add(candidate.element);
+            return true;
+          })
+          .sort((a, b) => a.top - b.top);
+      }
+
+      function cleanTitle(text) {
+        return String(text || '')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .replace(/^(?:\uC57D\s*)?\d+\s*(?:\uBD84|\uC2DC\uAC04|\uC77C)\s*\uC804\s*/u, '')
+          .replace(/\s+(\uAE00|\uC624\uB514\uC624|\uC601\uC0C1)\s+.+$/u, '')
+          .replace(/\s+\d+\s*(\uC77D\uC74C|\uC548\uC77D\uC74C)\s*$/u, '')
+          .trim();
+      }
+    }, index);
+
+    if (!clickResult.clicked) break;
+    await delay(1500);
+
+    const current = await evaluate(cdp, (listHref) => {
+      const url = location.href;
+      return {
+        url,
+        isContent: isLikelyContentUrl(url, new URL(listHref)),
+      };
+
+      function isLikelyContentUrl(href, listUrl) {
+        const url = new URL(href);
+        if (url.host !== listUrl.host) return false;
+        if (url.href === listUrl.href) return false;
+        const isClubContent = url.pathname.includes('/club/13/');
+        const isSecretContent = /^\/secrets\/\d+\/?$/.test(url.pathname);
+        if (!isClubContent && !isSecretContent) return false;
+        if (/login|sign|auth|notice|members|profile|payment|setting/i.test(url.pathname)) return false;
+        if (url.pathname.endsWith('/contents') && url.searchParams.get('type')) return false;
+        return isSecretContent || /\/contents?\/|contentId=|contentsId=|postId=|articleId=|\/contents\/?\d|\/\d+(?:\/)?$/.test(url.pathname + url.search);
+      }
+    }, sourceHref);
+
+    const openedUrl = (await getOpenContentTabUrls(sourceHref)).find((url) => !beforeUrls.includes(url));
+    const detectedUrl = current.isContent ? current.url : openedUrl;
+    if (detectedUrl && !seen.has(detectedUrl)) {
+      seen.add(detectedUrl);
+      clickedLinks.push({ url: detectedUrl, title: clickResult.title || detectedUrl });
+    }
+
+    if (clickResult.count < maxCandidates && index >= clickResult.count - 1) break;
+  }
+
+  await cdp.send('Page.navigate', { url: sourceHref }).catch(() => {});
+  await waitForPage(cdp).catch(() => {});
+  return clickedLinks;
+}
+
+async function getOpenContentTabUrls(sourceHref) {
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/json`);
+    if (!response.ok) return [];
+    const tabs = await response.json();
+    const listUrl = new URL(sourceHref);
+    return tabs
+      .filter((tab) => tab.type === 'page' && isLikelyContentHref(tab.url, listUrl))
+      .map((tab) => tab.url);
+  } catch {
+    return [];
+  }
+}
+
+function isLikelyContentHref(href, listUrl) {
+  try {
+    const url = new URL(href);
+    if (url.host !== listUrl.host) return false;
+    if (url.href === listUrl.href) return false;
+    const isClubContent = url.pathname.includes('/club/13/');
+    const isSecretContent = /^\/secrets\/\d+\/?$/.test(url.pathname);
+    if (!isClubContent && !isSecretContent) return false;
+    if (/login|sign|auth|notice|members|profile|payment|setting/i.test(url.pathname)) return false;
+    if (url.pathname.endsWith('/contents') && url.searchParams.get('type')) return false;
+    return isSecretContent || /\/contents?\/|contentId=|contentsId=|postId=|articleId=|\/contents\/?\d|\/\d+(?:\/)?$/.test(url.pathname + url.search);
+  } catch {
+    return false;
+  }
+}
+
+function getRoleLinkCandidates() {
+  const seen = new Set();
+  return Array.from(document.body?.querySelectorAll('[role="link"], .cursor-pointer') || [])
+    .map((element) => {
+      const rect = element.getBoundingClientRect();
+      const text = String(element.innerText || element.textContent || '').replace(/\s+/g, ' ').trim();
+      return { element, rect, text, top: rect.top + window.scrollY };
+    })
+    .filter((item) => {
+      if (item.rect.width < 120 || item.rect.height < 24) return false;
+      if (item.text.length < 20 || item.text.length > 700) return false;
+      if (!/(\uC77D\uC74C|\uC548\uC77D\uC74C)/.test(item.text)) return false;
+      if (!/(\uAE00|\uC624\uB514\uC624|\uC601\uC0C1)/.test(item.text)) return false;
+      if (/(\uACE0\uC815\uAE00|\uCD94\uCC9C\uC0C1\uD488|\uAD6C\uB3C5\s*\uC911\uC778|\uC774\uC6A9\uC57D\uAD00|\uAC1C\uC778\uC815\uBCF4\uCC98\uB9AC\uBC29\uCE68|\uD658\uBD88\uC815\uCC45)/.test(item.text)) return false;
+      return true;
+    })
+    .filter((item) => {
+      if (seen.has(item.element)) return false;
+      seen.add(item.element);
+      return true;
+    })
+    .sort((a, b) => a.top - b.top);
+}
+
+function cleanTitle(text) {
+  return String(text || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^(?:\uC57D\s*)?\d+\s*(?:\uBD84|\uC2DC\uAC04|\uC77C)\s*\uC804\s*/u, '')
+    .replace(/\s+(\uAE00|\uC624\uB514\uC624|\uC601\uC0C1)\s+.+$/u, '')
+    .replace(/\s+\d+\s*(\uC77D\uC74C|\uC548\uC77D\uC74C)\s*$/u, '')
+    .trim();
+}
+
+async function extractContentLinksByClicking(cdp, sourceHref) {
+  const clickedLinks = [];
+  const seen = new Set();
+  const maxCandidates = Number.isFinite(limit) ? Math.min(Math.max(limit * 4, 10), 30) : 30;
+
+  for (let index = 0; index < maxCandidates; index += 1) {
+    await cdp.send('Page.navigate', { url: sourceHref });
+    await waitForPage(cdp);
+
+    const candidateCount = await evaluate(cdp, () => {
+      return Array.from(document.body?.querySelectorAll('*') || [])
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          const text = String(element.innerText || element.textContent || '').replace(/\s+/g, ' ').trim();
+          return { rect, text };
+        })
+        .filter((item) => {
+          if (item.rect.width < 120 || item.rect.height < 24) return false;
+          if (item.text.length < 20 || item.text.length > 700) return false;
+          if (!/(읽음|안읽음)/.test(item.text)) return false;
+          if (!/(글|오디오|영상)/.test(item.text)) return false;
+          if (/고정글|추천상품|구독 중인|이용약관|개인정보처리방침|환불정책/.test(item.text)) return false;
+          return true;
+        }).length;
+    });
+    if (index >= candidateCount) break;
+
+    const clickResult = await evaluate(cdp, (candidateIndex) => {
+      const candidates = getClickableContentCandidates();
+      const item = candidates[candidateIndex];
+      if (!item) return { clicked: false, count: candidates.length };
+
+      item.element.scrollIntoView({ block: 'center', inline: 'center' });
+      item.element.click();
+      return {
+        clicked: true,
+        count: candidates.length,
+        title: item.title,
+        beforeUrl: location.href,
+      };
+
+      function getClickableContentCandidates() {
+        const seenElements = new Set();
+        return Array.from(document.body?.querySelectorAll('*') || [])
+          .map((element) => {
+            const rect = element.getBoundingClientRect();
+            const text = clean(element.innerText || element.textContent || '');
+            return { element, rect, text };
+          })
+          .filter((item) => {
+            if (item.rect.width < 120 || item.rect.height < 24) return false;
+            if (item.text.length < 20 || item.text.length > 700) return false;
+            if (!/(읽음|안읽음)/.test(item.text)) return false;
+            if (!/(글|오디오|영상)/.test(item.text)) return false;
+            if (/고정글|추천상품|구독 중인|이용약관|개인정보처리방침|환불정책/.test(item.text)) return false;
+            return true;
+          })
+          .map((item) => {
+            const element = findClickableElement(item.element);
+            return {
+              element,
+              top: element.getBoundingClientRect().top + window.scrollY,
+              title: cleanTitle(item.text),
+            };
+          })
+          .filter((item) => {
+            if (seenElements.has(item.element)) return false;
+            seenElements.add(item.element);
+            return true;
+          })
+          .sort((a, b) => a.top - b.top);
+      }
+
+      function findClickableElement(element) {
+        let current = element;
+        let best = element;
+        while (current && current !== document.body) {
+          const style = window.getComputedStyle(current);
+          const role = current.getAttribute('role') || '';
+          const className = String(current.className || '');
+          if (
+            style.cursor === 'pointer' ||
+            role === 'button' ||
+            current.tabIndex >= 0 ||
+            typeof current.onclick === 'function' ||
+            /card|item|content|post|cursor|click/i.test(className)
+          ) {
+            best = current;
+          }
+          current = current.parentElement;
+        }
+        return best;
+      }
+
+      function cleanTitle(text) {
+        return clean(text)
+          .replace(/^(?:약\s*)?\d+\s*(?:분|시간|일)\s*전\s*/u, '')
+          .replace(/\s+(글|오디오|영상)\s+.+$/u, '')
+          .replace(/\s+\d+\s*(읽음|안읽음)\s*$/u, '')
+          .trim();
+      }
+
+      function clean(value) {
+        return String(value || '').replace(/\s+/g, ' ').trim();
+      }
+    }, index);
+
+    if (!clickResult.clicked) break;
+    await delay(1500);
+
+    const current = await evaluate(cdp, (listHref) => {
+      const url = location.href;
+      return {
+        url,
+        isContent: isLikelyContentUrl(url, new URL(listHref)),
+      };
+
+      function isLikelyContentUrl(href, listUrl) {
+        const url = new URL(href);
+        if (url.host !== listUrl.host) return false;
+        if (url.href === listUrl.href) return false;
+        const isClubContent = url.pathname.includes('/club/13/');
+        const isSecretContent = /^\/secrets\/\d+\/?$/.test(url.pathname);
+        if (!isClubContent && !isSecretContent) return false;
+        if (/login|sign|auth|notice|members|profile|payment|setting/i.test(url.pathname)) return false;
+        if (url.pathname.endsWith('/contents') && url.searchParams.get('type')) return false;
+        return isSecretContent || /\/contents?\/|contentId=|contentsId=|postId=|articleId=|\/contents\/?\d|\/\d+(?:\/)?$/.test(url.pathname + url.search);
+      }
+    }, sourceHref);
+
+    if (current.isContent && !seen.has(current.url)) {
+      seen.add(current.url);
+      clickedLinks.push({ url: current.url, title: clickResult.title || current.url });
+    }
+
+    if (clickResult.count < maxCandidates && index >= clickResult.count - 1) break;
+  }
+
+  await cdp.send('Page.navigate', { url: sourceHref }).catch(() => {});
+  await waitForPage(cdp).catch(() => {});
+  return clickedLinks;
 }
 
 async function collectPageDiagnostics(cdp) {
