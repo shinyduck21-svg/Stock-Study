@@ -1,5 +1,58 @@
 [
     {
+        "id": 367,
+        "title": "6월 29일(월) 6회차 라이브 수업 녹화본",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "video",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_367.md",
+        "url": "https://drive.google.com/file/d/1YxPU4Bz_CArOXQ9GoFCTJv405jfsEBIp/preview"
+    },
+    {
+        "id": 364,
+        "title": "1059화. 🙋 7월 2 일 담쌤의 언제나 데이트",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_364.md",
+        "sourceUrl": "https://us-insight.com/secrets/26783"
+    },
+    {
+        "id": 365,
+        "title": "1058화. 🙋 7월 2일 담쌤의 언제나 데이트ㅣSK하이닉스 ADR 상장, 깊게 들여다 봅시다.",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_365.md",
+        "sourceUrl": "https://us-insight.com/secrets/26782"
+    },
+    {
+        "id": 366,
+        "title": "549화. 🌞 7월 2일 목요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_366.md",
+        "sourceUrl": "https://us-insight.com/secrets/26418",
+        "audioUrl": "https://drive.google.com/file/d/1Gykj_0bb_gH2kGiyFrBtjmv1MU0JYIsJ"
+    },
+    {
         "id": 360,
         "title": "1057화. 🙋7월 1일 담쌤의 언제나 데이트ㅣ위로와 사랑을 나누는 시간을 함께 해주신 급우님들께",
         "time": "방금 전",
