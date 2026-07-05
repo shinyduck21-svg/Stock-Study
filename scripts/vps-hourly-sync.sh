@@ -7,7 +7,6 @@ REMOTE="${GIT_REMOTE:-origin}"
 LOCK_FILE="${ROOT_DIR}/.sync-us-insight.lock"
 LOG_DIR="${ROOT_DIR}/logs"
 LOG_FILE="${LOG_DIR}/vps-hourly-sync.log"
-PUBLIC_SITE_URL="${PUBLIC_SITE_URL:-https://shinyduck21-svg.github.io/Stock-Study/}"
 
 mkdir -p "${LOG_DIR}"
 exec >> >(tee -a "${LOG_FILE}") 2>&1
@@ -31,6 +30,48 @@ notify_telegram() {
     >/dev/null; then
     echo "[$(date -Is)] telegram notification failed"
   fi
+}
+
+build_post_list_message() {
+  local count="$1"
+  local staged_docs="$2"
+
+  node --input-type=module - "${count}" "${staged_docs}" <<'NODE'
+import { readFileSync } from 'node:fs';
+import { basename } from 'node:path';
+
+const count = Number(process.argv[2] || 0);
+const stagedDocs = String(process.argv[3] || '')
+  .split(/\r?\n/)
+  .map((filePath) => basename(filePath.trim()))
+  .filter(Boolean);
+
+const posts = JSON.parse(readFileSync('public/data/posts.json', 'utf8'));
+const postsByFileName = new Map(posts.map((post) => [post.fileName, post]));
+const newPosts = stagedDocs
+  .map((fileName) => postsByFileName.get(fileName))
+  .filter(Boolean);
+
+const displayCount = newPosts.length || count;
+const lines = [`[담샘 여름학기] 새 글 ${displayCount}개가 올라왔습니다.`, ''];
+
+if (newPosts.length === 0) {
+  lines.push(`새 글 ${displayCount}개가 추가되었습니다.`);
+} else {
+  newPosts.forEach((post, index) => {
+    lines.push(`${index + 1}. ${cleanTitle(post.title || post.fileName)}`);
+  });
+}
+
+console.log(lines.join('\n'));
+
+function cleanTitle(value) {
+  return String(value || '')
+    .replace(/\p{Extended_Pictographic}/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+NODE
 }
 
 exec 9>"${LOCK_FILE}"
@@ -68,12 +109,16 @@ if git diff --cached --quiet; then
   exit 0
 fi
 
-NEW_POST_COUNT="$(git diff --cached --name-only --diff-filter=A -- 'public/docs/*.md' | wc -l | tr -d ' ')"
+STAGED_NEW_DOCS="$(git diff --cached --name-only --diff-filter=A -- 'public/docs/*.md')"
+NEW_POST_COUNT="$(printf '%s\n' "${STAGED_NEW_DOCS}" | sed '/^$/d' | wc -l | tr -d ' ')"
 COMMIT_TIME="$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M KST')"
 git commit -m "chore: sync US Insight posts ${COMMIT_TIME}"
-COMMIT_HASH="$(git rev-parse --short HEAD)"
 git push "${REMOTE}" "HEAD:${BRANCH}"
 
-notify_telegram "$(printf 'Stock-Study 새 글 업데이트 완료\n새 글: %s개\n커밋: %s\n시간: %s\n%s' "${NEW_POST_COUNT}" "${COMMIT_HASH}" "${COMMIT_TIME}" "${PUBLIC_SITE_URL}")"
+if [[ "${NEW_POST_COUNT}" -gt 0 ]]; then
+  notify_telegram "$(build_post_list_message "${NEW_POST_COUNT}" "${STAGED_NEW_DOCS}")"
+else
+  echo "[$(date -Is)] telegram notification skipped; no new markdown posts"
+fi
 
 echo "[$(date -Is)] sync complete"
