@@ -10,6 +10,7 @@
     "auth:google-drive": "node scripts/google-drive-auth.mjs",
     "sync:us-insight": "node scripts/sync-us-insight.mjs",
     "sync:us-insight:new": "node scripts/sync-us-insight.mjs --since-last",
+    "sync:us-insight:hourly": "bash scripts/vps-hourly-sync.sh",
     "preview": "vite preview"
   },
   "dependencies": {

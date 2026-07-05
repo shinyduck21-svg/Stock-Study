@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,6 +23,11 @@ const category = args.category || DEFAULT_CATEGORY;
 const term = args.term || DEFAULT_TERM;
 const profileDir = resolve(rootDir, args.profileDir || DEFAULT_PROFILE_DIR);
 const port = Number.parseInt(args.port || String(DEFAULT_PORT), 10);
+const headless = parseBooleanFlag(
+  args.headless,
+  process.env.CHROME_HEADLESS || process.env.HEADLESS_CHROME,
+  process.platform !== 'win32',
+);
 const dryRun = Boolean(args.dryRun);
 const debug = Boolean(args.debug);
 const force = Boolean(args.force);
@@ -66,7 +71,7 @@ async function main() {
   }
 
   ensureDir(profileDir);
-  launchChrome({ port, profileDir, url: sourceUrl });
+  launchChrome({ port, profileDir, url: sourceUrl, headless });
 
   const browser = await waitForBrowser(port);
   const tabInfo = await openTab(port, sourceUrl);
@@ -462,20 +467,26 @@ function ensureDir(path) {
   if (!existsSync(path)) mkdirSync(path, { recursive: true });
 }
 
-function launchChrome({ port, profileDir, url }) {
+function launchChrome({ port, profileDir, url, headless }) {
   const chromePath = findChrome();
   const chromeArgs = [
     `--remote-debugging-port=${port}`,
     `--user-data-dir=${profileDir}`,
     '--profile-directory=Default',
     '--disable-blink-features=AutomationControlled',
-    url,
+    '--window-size=1440,1000',
   ];
+
+  if (headless) {
+    chromeArgs.push('--headless=new', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage');
+  }
+
+  chromeArgs.push(url);
 
   const child = spawn(chromePath, chromeArgs, {
     detached: true,
     stdio: 'ignore',
-    windowsHide: false,
+    windowsHide: headless,
   });
   child.unref();
 }
@@ -485,13 +496,36 @@ function findChrome() {
     process.env.CHROME_PATH,
     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
     'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/chromium',
+    'google-chrome-stable',
+    'google-chrome',
+    'chromium-browser',
+    'chromium',
   ].filter(Boolean);
 
-  const found = candidates.find((candidate) => existsSync(candidate));
+  const found = candidates.find((candidate) => (
+    candidate.includes('/') || candidate.includes('\\') ? existsSync(candidate) : commandExists(candidate)
+  ));
   if (!found) {
-    throw new Error('Chrome was not found. Set CHROME_PATH to chrome.exe and retry.');
+    throw new Error('Chrome was not found. Install Chrome/Chromium or set CHROME_PATH and retry.');
   }
   return found;
+}
+
+function commandExists(command) {
+  const checker = process.platform === 'win32' ? 'where' : 'which';
+  const result = spawnSync(checker, [command], { stdio: 'ignore' });
+  return result.status === 0;
+}
+
+function parseBooleanFlag(argValue, envValue, defaultValue) {
+  const value = argValue ?? envValue;
+  if (value === undefined) return defaultValue;
+  if (typeof value === 'boolean') return value;
+  return !/^(0|false|no|off)$/i.test(String(value).trim());
 }
 
 async function waitForBrowser(port) {
