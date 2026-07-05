@@ -1,5 +1,32 @@
 [
     {
+        "id": 371,
+        "title": "7화. [기업분석도감] 여름학기 일곱번째 기업분석도감이 도착했습니다!",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "text",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_371.md",
+        "sourceUrl": "https://us-insight.com/secrets/27097",
+        "pdfUrl": "https://drive.google.com/file/d/1uycPIwoBR_H2p2Euu1w66dvg6BvyC0yZ/view?usp=drivesdk"
+    },
+    {
+        "id": 372,
+        "title": "1061화. 🙋 7월4 일 담쌤의 언제나 데이트",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_372.md",
+        "sourceUrl": "https://us-insight.com/secrets/26785"
+    },
+    {
         "id": 368,
         "title": "54화. [쓰담쓰담 라이브 녹화본] 함께였기에 지나올 수 있었던 한 주, 지구별 인생극장입니다.",
         "time": "방금 전",
