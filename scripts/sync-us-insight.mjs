@@ -1000,12 +1000,34 @@ async function collectPageDiagnostics(cdp) {
 }
 
 async function scrapeContent(cdp, url, fallbackTitle = '') {
+  ensureDir(tempDir);
   const networkMedia = [];
+  const downloadMedia = [];
   const networkHandler = (event) => {
     const media = mediaFromUrl(event?.response?.url || '', event?.response?.mimeType || '');
     if (media && !networkMedia.some((item) => item.url === media.url)) networkMedia.push(media);
   };
+  const requestHandler = (event) => {
+    const media = mediaFromUrl(event?.request?.url || '', '');
+    if (media && !networkMedia.some((item) => item.url === media.url)) networkMedia.push(media);
+  };
+  const downloadHandler = (event) => {
+    const url = event?.url || '';
+    const fileName = event?.suggestedFilename || '';
+    if (!url) return;
+    const media = /\.pdf$/i.test(fileName)
+      ? { kind: 'pdf', url, mimeType: 'application/pdf' }
+      : mediaFromUrl(url, /\.pdf$/i.test(fileName) ? 'application/pdf' : '');
+    if (media && !downloadMedia.some((item) => item.url === media.url)) downloadMedia.push(media);
+  };
+  cdp.on('Network.requestWillBeSent', requestHandler);
   cdp.on('Network.responseReceived', networkHandler);
+  cdp.on('Browser.downloadWillBegin', downloadHandler);
+  await cdp.send('Browser.setDownloadBehavior', {
+    behavior: 'allow',
+    downloadPath: tempDir,
+    eventsEnabled: true,
+  }).catch(() => {});
   await cdp.send('Page.navigate', { url });
   await waitForPage(cdp);
   await autoScroll(cdp);
@@ -1037,18 +1059,12 @@ async function scrapeContent(cdp, url, fallbackTitle = '') {
     const title = contentTitle || clean(provisionalTitle);
     const selected = sliceContent(candidates, fallback, title);
 
-    const media = Array.from(document.querySelectorAll('audio[src], video[src], source[src], iframe[src], a[href]'))
-      .map((el) => el.getAttribute('src') || el.getAttribute('href'))
-      .filter(Boolean)
-      .map((src) => new URL(src, location.href).href)
-      .filter((src) => /\.(mp3|m4a|aac|wav|mp4|m3u8|pdf)(\?|$)|audio|video|stream|pdf/i.test(src));
-
     return {
       sourceUrl: location.href,
       title: clean(title),
       html: selected.html,
       text: clean(selected.text),
-      media,
+      media: collectMediaUrls(),
     };
 
     function textOf(selector) {
@@ -1385,7 +1401,59 @@ async function scrapeContent(cdp, url, fallbackTitle = '') {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
     }
+
+    function collectMediaUrls() {
+      const attrs = [
+        'src',
+        'href',
+        'data-src',
+        'data-url',
+        'data-href',
+        'data-download-url',
+        'data-file-url',
+      ];
+
+      const urls = [];
+      Array.from(document.querySelectorAll('audio, video, source, iframe, a, button, [role="button"], [data-src], [data-url], [data-href]'))
+        .forEach((el) => {
+          attrs.forEach((attr) => {
+            const value = el.getAttribute(attr);
+            if (value) urls.push(value);
+          });
+        });
+
+      const html = document.documentElement.innerHTML || '';
+      Array.from(html.matchAll(/https?:\\?\/\\?\/[^"'`<>\\\s]+(?:pdf|mp3|m4a|aac|wav|mp4|m3u8)[^"'`<>\\\s]*/gi))
+        .forEach((match) => urls.push(match[0].replace(/\\\//g, '/')));
+
+      return [...new Set(urls)]
+        .map((src) => {
+          try {
+            return new URL(src.replace(/&amp;/g, '&'), location.href).href;
+          } catch {
+            return '';
+          }
+        })
+        .filter((src) => /\.(mp3|m4a|aac|wav|mp4|m3u8|pdf)(\?|#|$)|audio|video|stream|pdf/i.test(src));
+    }
   }, fallbackTitle);
+  const tabsBeforeAnalysisClick = await listBrowserTargets(port).catch(() => []);
+  const analysisTrigger = await openAnalysisPdfIfAvailable(cdp, data.title || fallbackTitle);
+  if (debug && analysisTrigger.opened) console.log(`Opened analysis/PDF trigger: ${analysisTrigger.text}`);
+  if (debug && !analysisTrigger.opened && /기업분석도감|기업분석/.test(`${data.title} ${fallbackTitle}`)) {
+    console.log(`No analysis/PDF trigger opened. Candidates: ${analysisTrigger.candidates?.join(' | ') || '(none)'}`);
+  }
+  const clickedMedia = analysisTrigger.opened ? await collectVisibleMediaUrls(cdp) : [];
+  const analysisMedia = analysisTrigger.url ? [{ kind: 'pdf', url: analysisTrigger.url, mimeType: 'application/pdf' }] : [];
+  const browserPdfMedia = analysisTrigger.opened ? await collectNewBrowserPdfViewerMedia(port, tabsBeforeAnalysisClick) : [];
+  if (debug && browserPdfMedia.length > 0) {
+    browserPdfMedia.forEach((media) => console.log(`Detected PDF viewer media: ${media.url}`));
+  }
+  if (debug && analysisTrigger.opened && clickedMedia.length === 0 && analysisMedia.length === 0 && browserPdfMedia.length === 0) {
+    const diagnostics = await collectAnalysisPdfDiagnostics(cdp);
+    console.log('Analysis/PDF diagnostics:');
+    diagnostics.forEach((item) => console.log(`- ${item}`));
+  }
   const transcriptOpened = await openTranscriptIfAvailableStable(cdp);
   if (debug && transcriptOpened) console.log('Opened transcript panel.');
   const transcriptMarkdown = transcriptOpened
@@ -1394,18 +1462,20 @@ async function scrapeContent(cdp, url, fallbackTitle = '') {
   if (debug && transcriptOpened) console.log(`Transcript markdownLength=${transcriptMarkdown.length}`);
 
   await delay(2000);
+  cdp.off('Network.requestWillBeSent', requestHandler);
   cdp.off('Network.responseReceived', networkHandler);
+  cdp.off('Browser.downloadWillBegin', downloadHandler);
 
   const markdown = appendTranscriptMarkdown(
     cleanupMarkdown(turndown.turndown(data.html || data.text || '')),
     transcriptMarkdown,
   );
-  const domMedia = data.media.map((url) => mediaFromUrl(url, '')).filter(Boolean);
+  const domMedia = [...data.media, ...clickedMedia].map((url) => mediaFromUrl(url, '')).filter(Boolean);
   return {
     ...data,
     title: cleanupTitle(data.title),
     markdown,
-    media: dedupeMedia([...domMedia, ...networkMedia]),
+    media: dedupeMedia([...domMedia, ...analysisMedia, ...browserPdfMedia, ...networkMedia, ...downloadMedia]),
   };
 }
 
@@ -1437,6 +1507,271 @@ async function openTranscriptIfAvailableStable(cdp) {
   await waitForTranscriptRender(cdp);
   await autoScroll(cdp);
   return true;
+}
+
+async function openAnalysisPdfIfAvailable(cdp, title = '') {
+  const result = await evaluate(cdp, (titleText) => {
+    const pageText = `${titleText || ''}\n${document.body?.innerText || ''}`;
+    if (!/기업분석도감|기업분석|pdf|PDF|자료|다운로드|첨부/.test(pageText)) {
+      return { opened: false, text: '' };
+    }
+
+    const triggerPattern = /(?:기업\s*분석|기업분석도감|PDF|pdf|자료|다운로드|첨부|파일)/i;
+    const candidates = Array.from(document.querySelectorAll('button, a[href], [role="button"], [tabindex], div, span'))
+      .map((node) => {
+        const rect = node.getBoundingClientRect();
+        const childImageText = Array.from(node.querySelectorAll?.('img') || [])
+          .map((img) => clean(img.getAttribute('alt') || img.getAttribute('title') || ''))
+          .filter(Boolean)
+          .join(' ');
+        const text = clean(node.innerText || node.textContent || node.getAttribute('aria-label') || node.getAttribute('title') || childImageText);
+        const rawUrl = collectNearbyUrl(node);
+        let url = '';
+        try {
+          if (rawUrl) url = new URL(rawUrl.replace(/&amp;/g, '&'), location.href).href;
+        } catch {
+          url = rawUrl;
+        }
+        return {
+          node,
+          text,
+          href: rawUrl,
+          url,
+          visible: rect.width > 0 && rect.height > 0,
+          area: rect.width * rect.height,
+          top: rect.top + window.scrollY,
+          tag: node.tagName,
+          clickable: isLikelyClickable(node),
+        };
+      })
+      .filter((item) => item.visible)
+      .filter((item) => item.area > 20 && item.area < 250000)
+      .filter((item) => item.href || item.text.length <= 120)
+      .filter((item) => !/^\d+\s*화\./.test(item.text))
+      .filter((item) => triggerPattern.test(`${item.text} ${item.href} ${item.url}`))
+      .sort((a, b) => score(b) - score(a) || a.area - b.area || a.top - b.top);
+
+    const target = candidates[0];
+    if (!target) {
+      return {
+        opened: false,
+        text: '',
+        candidates: candidates.slice(0, 10).map((item) => item.text || item.url || item.href || item.tag),
+      };
+    }
+
+    const clickNode = findClickableTarget(target.node);
+    clickNode.scrollIntoView({ block: 'center', inline: 'center' });
+    const clickRect = clickNode.getBoundingClientRect();
+    clickNode.click();
+    return {
+      opened: true,
+      text: target.text || target.url || target.href || target.tag,
+      url: target.url,
+      html: target.node.outerHTML.slice(0, 1000),
+      x: clickRect.left + clickRect.width / 2,
+      y: clickRect.top + clickRect.height / 2,
+      candidates: candidates.slice(0, 10).map((item) => item.text || item.url || item.href || item.tag),
+    };
+
+    function score(item) {
+      const haystack = `${item.text} ${item.href} ${item.url}`;
+      let value = 0;
+      if (/\.pdf(?:[?#]|$)|pdf/i.test(haystack)) value += 100;
+      if (/기업\s*분석|기업분석도감/.test(haystack)) value += 80;
+      if (/다운로드|첨부|파일|자료/.test(haystack)) value += 40;
+      if (item.tag === 'A') value += 20;
+      if (item.tag === 'BUTTON') value += 20;
+      if (item.clickable) value += 30;
+      return value;
+    }
+
+    function clean(value) {
+      return String(value || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function collectNearbyUrl(node) {
+      const attrs = ['href', 'src', 'data-url', 'data-href', 'data-download-url', 'data-file-url', 'data-file', 'data-link'];
+      const values = [];
+      const addAttrs = (target) => {
+        if (!target?.getAttribute) return;
+        attrs.forEach((attr) => {
+          const value = target.getAttribute(attr);
+          if (value) values.push(value);
+        });
+      };
+
+      addAttrs(node);
+      Array.from(node.querySelectorAll?.('a[href], iframe[src], [data-url], [data-href], [data-download-url], [data-file-url], [data-file], [data-link]') || [])
+        .forEach(addAttrs);
+
+      let parent = node.parentElement;
+      for (let depth = 0; parent && depth < 3; depth += 1) {
+        addAttrs(parent);
+        Array.from(parent.querySelectorAll?.('a[href], iframe[src], [data-url], [data-href], [data-download-url], [data-file-url], [data-file], [data-link]') || [])
+          .slice(0, 5)
+          .forEach(addAttrs);
+        parent = parent.parentElement;
+      }
+
+      return values.find((value) => /pdf|download|file|attachment|api|secret|secrets/i.test(value)) || values[0] || '';
+    }
+
+    function isLikelyClickable(node) {
+      const style = window.getComputedStyle(node);
+      return node.tagName === 'A' ||
+        node.tagName === 'BUTTON' ||
+        node.getAttribute('role') === 'button' ||
+        node.hasAttribute('tabindex') ||
+        node.hasAttribute('onclick') ||
+        style.cursor === 'pointer';
+    }
+
+    function findClickableTarget(node) {
+      if (isLikelyClickable(node)) return node;
+
+      const direct = node.closest?.('a[href], button, [role="button"], [tabindex], [onclick]');
+      if (direct) return direct;
+
+      let parent = node.parentElement;
+      for (let depth = 0; parent && depth < 5; depth += 1) {
+        if (isLikelyClickable(parent)) return parent;
+        const siblingButton = parent.querySelector?.('a[href], button, [role="button"], [tabindex], [onclick]');
+        if (siblingButton) return siblingButton;
+        parent = parent.parentElement;
+      }
+
+      return node;
+    }
+  }, title);
+
+  if (!result.opened) return result;
+  if (Number.isFinite(result.x) && Number.isFinite(result.y)) {
+    await cdp.send('Input.dispatchMouseEvent', {
+      type: 'mouseMoved',
+      x: result.x,
+      y: result.y,
+      button: 'none',
+    }).catch(() => {});
+    await cdp.send('Input.dispatchMouseEvent', {
+      type: 'mousePressed',
+      x: result.x,
+      y: result.y,
+      button: 'left',
+      clickCount: 1,
+    }).catch(() => {});
+    await cdp.send('Input.dispatchMouseEvent', {
+      type: 'mouseReleased',
+      x: result.x,
+      y: result.y,
+      button: 'left',
+      clickCount: 1,
+    }).catch(() => {});
+  }
+  await delay(6000);
+  await autoScroll(cdp);
+  await delay(3000);
+  return result;
+}
+
+async function collectVisibleMediaUrls(cdp) {
+  return evaluate(cdp, () => {
+    const attrs = [
+      'src',
+      'href',
+      'data-src',
+      'data-url',
+      'data-href',
+      'data-download-url',
+      'data-file-url',
+    ];
+    const urls = [];
+
+    Array.from(document.querySelectorAll('audio, video, source, iframe, a, button, [role="button"], [data-src], [data-url], [data-href]'))
+      .forEach((el) => {
+        attrs.forEach((attr) => {
+          const value = el.getAttribute(attr);
+          if (value) urls.push(value);
+        });
+      });
+
+    const html = document.documentElement.innerHTML || '';
+    Array.from(html.matchAll(/https?:\\?\/\\?\/[^"'`<>\\\s]+(?:pdf|mp3|m4a|aac|wav|mp4|m3u8)[^"'`<>\\\s]*/gi))
+      .forEach((match) => urls.push(match[0].replace(/\\\//g, '/')));
+
+    return [...new Set(urls)]
+      .map((src) => {
+        try {
+          return new URL(String(src).replace(/&amp;/g, '&'), location.href).href;
+        } catch {
+          return '';
+        }
+      })
+      .filter((src) => /\.(mp3|m4a|aac|wav|mp4|m3u8|pdf)(\?|#|$)|audio|video|stream|pdf/i.test(src));
+  });
+}
+
+async function collectAnalysisPdfDiagnostics(cdp) {
+  return evaluate(cdp, () => {
+    const pattern = /기업분석|기업분석도감|pdf/i;
+    return Array.from(document.querySelectorAll('a, button, [role="button"], [tabindex], div, span, iframe'))
+      .map((node) => {
+        const text = clean(node.innerText || node.textContent || node.getAttribute('aria-label') || node.getAttribute('title') || '');
+        const attrs = Array.from(node.attributes || [])
+          .filter((attr) => /href|src|url|file|download|data|aria|title|onclick/i.test(attr.name + attr.value))
+          .map((attr) => `${attr.name}=${attr.value}`)
+          .slice(0, 8)
+          .join(' ');
+        return {
+          tag: node.tagName,
+          text,
+          attrs,
+        };
+      })
+      .filter((item) => pattern.test(`${item.text} ${item.attrs}`))
+      .slice(0, 12)
+      .map((item) => `${item.tag} text="${item.text.slice(0, 140)}" attrs="${item.attrs.slice(0, 500)}"`);
+
+    function clean(value) {
+      return String(value || '').replace(/\s+/g, ' ').trim();
+    }
+  });
+}
+
+async function listBrowserTargets(browserPort) {
+  const response = await fetch(`http://127.0.0.1:${browserPort}/json/list`);
+  if (!response.ok) throw new Error(`Failed to list browser targets: HTTP ${response.status}`);
+  return response.json();
+}
+
+async function collectNewBrowserPdfViewerMedia(browserPort, previousTargets) {
+  await delay(1000);
+  const previousIds = new Set(previousTargets.map((target) => target.id));
+  const targets = await listBrowserTargets(browserPort);
+  const newTargets = targets.filter((target) => !previousIds.has(target.id));
+  const candidates = newTargets.length > 0 ? newTargets : targets;
+
+  return candidates
+    .map((target) => pdfMediaFromViewerUrl(target.url || ''))
+    .filter(Boolean);
+}
+
+function pdfMediaFromViewerUrl(viewerUrl) {
+  if (!viewerUrl) return null;
+  const match = String(viewerUrl).match(/\/pdf-viewer\/([^/?#]+)/);
+  if (!match) {
+    const directMedia = mediaFromUrl(viewerUrl, '');
+    return directMedia?.kind === 'pdf' ? directMedia : null;
+  }
+
+  try {
+    const encoded = decodeURIComponent(match[1]);
+    const decoded = Buffer.from(encoded, 'base64').toString('utf8');
+    const media = mediaFromUrl(decoded, 'application/pdf');
+    return media?.kind === 'pdf' ? media : null;
+  } catch {
+    return null;
+  }
 }
 
 async function waitForTranscriptRender(cdp) {
