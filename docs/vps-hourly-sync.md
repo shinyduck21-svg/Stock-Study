@@ -132,6 +132,8 @@ TELEGRAM_CHAT_ID=chat_id
 - Telegram 알림은 새 글이 실제로 commit/push된 경우에만 전송됩니다.
 - `TELEGRAM_BOT_TOKEN` 또는 `TELEGRAM_CHAT_ID`가 없으면 알림만 건너뛰고 동기화는 계속 진행됩니다.
 - Telegram 전송이 실패해도 이미 성공한 동기화와 push를 실패로 처리하지 않습니다. 실패 여부는 로그에 남습니다.
+- 새 글에 PDF가 있으면 Google Drive 폴더 `10. 서재형 투자학교 여름학기(26년) -> 기업분석도감`에 업로드하고, 게시글의 `pdfUrl`에 Drive 링크를 저장합니다.
+- PDF 파일명은 `서재형 투자학교 여름학기 X번째 기업분석도감.pdf` 형식을 사용합니다. X는 게시글 제목의 한글 순번을 우선 사용하고, 없으면 기존 여름학기 기업분석도감 PDF 개수 기준으로 계산합니다.
 - 스크립트는 `flock`을 사용하므로 이전 실행이 끝나지 않았으면 새 실행은 조용히 종료됩니다.
 - 자동 커밋 대상은 생성 콘텐츠인 `public/data/posts.json`, `public/docs`로 제한됩니다.
 - `main` 브랜치에 push되면 GitHub Pages 배포는 `.github/workflows/deploy.yml`이 처리합니다.

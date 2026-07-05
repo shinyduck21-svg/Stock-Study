@@ -14,6 +14,7 @@ const DEFAULT_TERM = '26년 여름학기';
 const DEFAULT_PROFILE_DIR = resolve(rootDir, 'chrome_profile');
 const DEFAULT_PORT = 9222;
 const DEFAULT_GDRIVE_FOLDER_ID = '1v9H6SxCxIelFLW_nfDkOYjZFX3t_3nNC';
+const DEFAULT_PDF_GDRIVE_FOLDER_ID = '1EkXlDqs50uyvS-UHcOP9RtoiCY-7Yg1L';
 
 const args = parseArgs(process.argv.slice(2));
 const sourceUrl = args.source || DEFAULT_SOURCE;
@@ -34,6 +35,7 @@ const force = Boolean(args.force);
 const skipMedia = Boolean(args.skipMedia);
 const updateTranscripts = Boolean(args.updateTranscripts || args.updateTranscript);
 const gdriveFolderId = args.gdriveFolderId || DEFAULT_GDRIVE_FOLDER_ID;
+const pdfGdriveFolderId = args.pdfGdriveFolderId || process.env.PDF_GDRIVE_FOLDER_ID || DEFAULT_PDF_GDRIVE_FOLDER_ID;
 const publicBaseUrl = normalizePublicBaseUrl(args.publicBaseUrl || process.env.PUBLIC_SITE_URL || 'https://shinyduck21-svg.github.io/Stock-Study/');
 const updateIds = parseIdList(args.updateIds || args.updateId || '');
 
@@ -166,8 +168,13 @@ async function main() {
 
   if (!dryRun && !skipMedia) {
     ensureDir(tempDir);
+    const existingAnalysisPdfCount = countSummerAnalysisPdfPosts(posts);
+    let pdfUploadIndex = 0;
     for (const item of newItems) {
-      await uploadDetectedMedia(item, cdp);
+      if (hasPdf(item)) pdfUploadIndex += 1;
+      await uploadDetectedMedia(item, cdp, {
+        pdfOrdinal: koreanOrdinalFromTitle(item.title) || koreanOrdinal(existingAnalysisPdfCount + pdfUploadIndex),
+      });
     }
   }
 
@@ -191,6 +198,7 @@ const nextIdStart = Math.max(0, ...posts.map((post) => Number(post.id) || 0)) + 
     };
     if (item.driveVideoUrl) post.url = item.driveVideoUrl;
     if (item.driveAudioUrl) post.audioUrl = item.driveAudioUrl;
+    if (item.drivePdfUrl) post.pdfUrl = item.drivePdfUrl;
 
     return {
       post: {
@@ -1630,6 +1638,69 @@ function hasPdf(item) {
   return item.media.some((media) => media.kind === 'pdf' || /\.pdf(\?|$)/i.test(media.url) || /pdf/i.test(media.mimeType));
 }
 
+function countSummerAnalysisPdfPosts(posts) {
+  return posts.filter((post) => (
+    /기업분석도감/.test(`${post.title || ''} ${post.category || ''}`) &&
+    /여름학기/.test(`${post.title || ''} ${post.term || ''}`) &&
+    post.pdfUrl
+  )).length;
+}
+
+function koreanOrdinalFromTitle(title) {
+  const text = String(title || '');
+  const koreanMatch = text.match(/([가-힣]+번째)\s*기업분석도감/);
+  if (koreanMatch) return koreanMatch[1];
+
+  const episodeMatch = text.match(/(\d+)\s*화/);
+  if (episodeMatch) return koreanOrdinal(Number(episodeMatch[1]));
+
+  return '';
+}
+
+function koreanOrdinal(number) {
+  const value = Number(number);
+  if (!Number.isFinite(value) || value < 1) return '';
+
+  const nativeOrdinals = [
+    '',
+    '첫번째',
+    '두번째',
+    '세번째',
+    '네번째',
+    '다섯번째',
+    '여섯번째',
+    '일곱번째',
+    '여덟번째',
+    '아홉번째',
+    '열번째',
+  ];
+  if (nativeOrdinals[value]) return nativeOrdinals[value];
+
+  return `${sinoKoreanNumber(value)}번째`;
+}
+
+function sinoKoreanNumber(number) {
+  const digits = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
+  const units = [
+    { value: 1000, label: '천' },
+    { value: 100, label: '백' },
+    { value: 10, label: '십' },
+  ];
+  let remaining = Number(number);
+  let result = '';
+
+  for (const unit of units) {
+    const digit = Math.floor(remaining / unit.value);
+    if (digit > 0) {
+      result += `${digit === 1 ? '' : digits[digit]}${unit.label}`;
+      remaining %= unit.value;
+    }
+  }
+
+  if (remaining > 0) result += digits[remaining];
+  return result || digits[number] || String(number);
+}
+
 function mediaFromUrl(url, mimeType) {
   if (!url || /^blob:/i.test(url) || /^data:/i.test(url)) return null;
   const cleanUrl = String(url);
@@ -1654,28 +1725,42 @@ function dedupeMedia(media) {
   });
 }
 
-async function uploadDetectedMedia(item, cdp) {
+async function uploadDetectedMedia(item, cdp, { pdfOrdinal } = {}) {
   const media = item.media.find((entry) => entry.kind === 'video') || item.media.find((entry) => entry.kind === 'audio');
-  if (!media) return;
+  const pdf = item.media.find((entry) => entry.kind === 'pdf');
+  if (!media && !pdf) return;
 
-  console.log(`Downloading media for upload: ${media.url}`);
   const headers = await browserHeaders(cdp, item.sourceUrl);
-  const extension = extensionForMedia(media);
-  const localPath = resolve(tempDir, `${sanitizeFilename(item.title).slice(0, 80) || 'media'}-${Date.now()}${extension}`);
-  const mimeType = media.mimeType.includes('mpegurl') || media.url.includes('.m3u8')
-    ? 'video/mp2t'
-    : media.mimeType || guessMimeType(localPath) || 'application/octet-stream';
 
-  if (media.url.includes('.m3u8')) {
-    await downloadHls(media.url, localPath, headers);
-  } else {
-    await downloadBinary(media.url, localPath, headers);
+  if (media) {
+    console.log(`Downloading media for upload: ${media.url}`);
+    const extension = extensionForMedia(media);
+    const localPath = resolve(tempDir, `${sanitizeFilename(item.title).slice(0, 80) || 'media'}-${Date.now()}${extension}`);
+    const mimeType = media.mimeType.includes('mpegurl') || media.url.includes('.m3u8')
+      ? 'video/mp2t'
+      : media.mimeType || guessMimeType(localPath) || 'application/octet-stream';
+
+    if (media.url.includes('.m3u8')) {
+      await downloadHls(media.url, localPath, headers);
+    } else {
+      await downloadBinary(media.url, localPath, headers);
+    }
+
+    const drive = await uploadToDrive(localPath, `${sanitizeFilename(item.title)}${extension}`, mimeType);
+    if (media.kind === 'video') item.driveVideoUrl = `https://drive.google.com/file/d/${drive.id}/preview`;
+    if (media.kind === 'audio') item.driveAudioUrl = `https://drive.google.com/file/d/${drive.id}`;
+    rmSync(localPath, { force: true });
   }
 
-  const drive = await uploadToDrive(localPath, `${sanitizeFilename(item.title)}${extension}`, mimeType);
-  if (media.kind === 'video') item.driveVideoUrl = `https://drive.google.com/file/d/${drive.id}/preview`;
-  if (media.kind === 'audio') item.driveAudioUrl = `https://drive.google.com/file/d/${drive.id}`;
-  rmSync(localPath, { force: true });
+  if (pdf) {
+    console.log(`Downloading PDF for upload: ${pdf.url}`);
+    const localPath = resolve(tempDir, `${sanitizeFilename(item.title).slice(0, 80) || 'analysis'}-${Date.now()}.pdf`);
+    await downloadBinary(pdf.url, localPath, headers);
+    const fileName = `서재형 투자학교 여름학기 ${pdfOrdinal || '다음'} 기업분석도감.pdf`;
+    const drive = await uploadToDrive(localPath, fileName, 'application/pdf', { folderId: pdfGdriveFolderId });
+    item.drivePdfUrl = drive.webViewLink || `https://drive.google.com/file/d/${drive.id}/view?usp=drive_link`;
+    rmSync(localPath, { force: true });
+  }
 }
 
 async function browserHeaders(cdp, referer) {
@@ -1737,10 +1822,10 @@ function chooseVariant(playlist, playlistUrl) {
   return best?.url || null;
 }
 
-async function uploadToDrive(filePath, fileName, mimeType) {
+async function uploadToDrive(filePath, fileName, mimeType, { folderId = gdriveFolderId } = {}) {
   const accessToken = await getGoogleAccessToken();
   const metadata = { name: fileName };
-  if (gdriveFolderId) metadata.parents = [gdriveFolderId];
+  if (folderId) metadata.parents = [folderId];
 
   const boundary = `stock-study-${Date.now()}`;
   const fileBuffer = readFileSync(filePath);
