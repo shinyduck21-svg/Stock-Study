@@ -7,12 +7,31 @@ REMOTE="${GIT_REMOTE:-origin}"
 LOCK_FILE="${ROOT_DIR}/.sync-us-insight.lock"
 LOG_DIR="${ROOT_DIR}/logs"
 LOG_FILE="${LOG_DIR}/vps-hourly-sync.log"
+PUBLIC_SITE_URL="${PUBLIC_SITE_URL:-https://shinyduck21-svg.github.io/Stock-Study/}"
 
 mkdir -p "${LOG_DIR}"
 exec >> >(tee -a "${LOG_FILE}") 2>&1
 cd "${ROOT_DIR}"
 
 echo "[$(date -Is)] starting US Insight sync"
+
+notify_telegram() {
+  local message="$1"
+
+  if [[ -z "${TELEGRAM_BOT_TOKEN:-}" || -z "${TELEGRAM_CHAT_ID:-}" ]]; then
+    echo "[$(date -Is)] telegram notification skipped; TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is not set"
+    return 0
+  fi
+
+  if ! curl -fsS \
+    -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+    --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+    --data-urlencode "text=${message}" \
+    --data-urlencode "disable_web_page_preview=true" \
+    >/dev/null; then
+    echo "[$(date -Is)] telegram notification failed"
+  fi
+}
 
 exec 9>"${LOCK_FILE}"
 if ! flock -n 9; then
@@ -49,8 +68,12 @@ if git diff --cached --quiet; then
   exit 0
 fi
 
+NEW_POST_COUNT="$(git diff --cached --name-only --diff-filter=A -- 'public/docs/*.md' | wc -l | tr -d ' ')"
 COMMIT_TIME="$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M KST')"
 git commit -m "chore: sync US Insight posts ${COMMIT_TIME}"
+COMMIT_HASH="$(git rev-parse --short HEAD)"
 git push "${REMOTE}" "HEAD:${BRANCH}"
+
+notify_telegram "$(printf 'Stock-Study 새 글 업데이트 완료\n새 글: %s개\n커밋: %s\n시간: %s\n%s' "${NEW_POST_COUNT}" "${COMMIT_HASH}" "${COMMIT_TIME}" "${PUBLIC_SITE_URL}")"
 
 echo "[$(date -Is)] sync complete"
