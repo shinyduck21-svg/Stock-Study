@@ -13,6 +13,7 @@ const DEFAULT_CATEGORY = 'US Insight';
 const DEFAULT_TERM = '26년 여름학기';
 const DEFAULT_PROFILE_DIR = resolve(rootDir, 'chrome_profile');
 const DEFAULT_PORT = 9222;
+const DEFAULT_SCAN_LIMIT = 15;
 const DEFAULT_GDRIVE_FOLDER_ID = '1v9H6SxCxIelFLW_nfDkOYjZFX3t_3nNC';
 const DEFAULT_PDF_GDRIVE_FOLDER_ID = '1EkXlDqs50uyvS-UHcOP9RtoiCY-7Yg1L';
 
@@ -20,6 +21,7 @@ const args = parseArgs(process.argv.slice(2));
 const sourceUrl = args.source || DEFAULT_SOURCE;
 const allNew = Boolean(args.sinceLast || args.allNew || args.new);
 const limit = allNew && !args.limit ? Number.POSITIVE_INFINITY : Number.parseInt(args.limit || '10', 10);
+const scanLimit = Number.parseInt(args.scanLimit || String(DEFAULT_SCAN_LIMIT), 10);
 const category = args.category || DEFAULT_CATEGORY;
 const term = args.term || DEFAULT_TERM;
 const profileDir = resolve(rootDir, args.profileDir || DEFAULT_PROFILE_DIR);
@@ -70,6 +72,9 @@ main().catch((error) => {
 async function main() {
   if ((!Number.isFinite(limit) && !allNew) || limit < 1) {
     throw new Error('--limit must be a positive number.');
+  }
+  if (!Number.isFinite(scanLimit) || scanLimit < 1) {
+    throw new Error('--scan-limit must be a positive number.');
   }
 
   ensureDir(profileDir);
@@ -127,7 +132,7 @@ async function main() {
   const targetLinks = selectTargetLinks(links, existingSources);
 
   if (debug && allNew) {
-    console.log(`Selected ${targetLinks.length} links after last imported source.`);
+    console.log(`Selected ${targetLinks.length} links from the latest scan window.`);
   }
 
   const newItems = [];
@@ -178,7 +183,7 @@ async function main() {
     }
   }
 
-const nextIdStart = Math.max(0, ...posts.map((post) => Number(post.id) || 0)) + 1;
+  const nextIdStart = Math.max(0, ...posts.map((post) => Number(post.id) || 0)) + 1;
   const additions = newItems.map((item, index) => {
     const id = nextIdStart + index;
     const fileName = `briefing_${id}.md`;
@@ -221,7 +226,8 @@ const nextIdStart = Math.max(0, ...posts.map((post) => Number(post.id) || 0)) + 
     writeFileSync(resolve(docsDir, addition.fileName), addition.markdown, 'utf8');
   }
 
-  writeFileSync(postsPath, `${JSON.stringify([...additions.map((x) => x.post), ...posts], null, 4)}\n`, 'utf8');
+  const nextPosts = mergePostsInScanOrder({ posts, additions, targetLinks });
+  writeFileSync(postsPath, `${JSON.stringify(nextPosts, null, 4)}\n`, 'utf8');
   console.log(`Imported ${additions.length} posts.`);
   additions.forEach(({ post }) => console.log(`- #${post.id} ${post.title}`));
   printImportNotification(additions);
@@ -439,15 +445,36 @@ function selectTargetLinks(links, existingSources) {
     return links;
   }
 
-  const selected = [];
-  for (const link of links) {
-    if (existingSources.has(normalizeUrl(link.url))) {
-      console.log(`Reached last imported post: ${link.url}`);
-      break;
-    }
-    selected.push(link);
+  const windowSize = Math.min(scanLimit, links.length);
+  console.log(`Scanning latest ${windowSize} links for missing posts.`);
+  return links.slice(0, windowSize);
+}
+
+function mergePostsInScanOrder({ posts, additions, targetLinks }) {
+  if (!allNew || force) return [...additions.map((addition) => addition.post), ...posts];
+
+  const existingBySource = new Map();
+  for (const post of posts) {
+    const sourceKey = normalizeUrl(post.sourceUrl);
+    if (sourceKey && !existingBySource.has(sourceKey)) existingBySource.set(sourceKey, post);
   }
-  return selected;
+
+  const additionsBySource = new Map();
+  for (const addition of additions) {
+    const sourceKey = normalizeUrl(addition.post.sourceUrl);
+    if (sourceKey) additionsBySource.set(sourceKey, addition.post);
+  }
+
+  const scanSources = new Set(targetLinks.map((link) => normalizeUrl(link.url)).filter(Boolean));
+  const orderedScanPosts = targetLinks
+    .map((link) => {
+      const sourceKey = normalizeUrl(link.url);
+      return additionsBySource.get(sourceKey) || existingBySource.get(sourceKey) || null;
+    })
+    .filter(Boolean);
+  const remainingPosts = posts.filter((post) => !scanSources.has(normalizeUrl(post.sourceUrl)));
+
+  return [...orderedScanPosts, ...remainingPosts];
 }
 
 function parseArgs(argv) {
