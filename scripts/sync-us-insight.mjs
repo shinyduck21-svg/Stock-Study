@@ -90,6 +90,9 @@ async function main() {
   await waitForPage(cdp);
 
   if (await isLoginPage(cdp)) {
+    if (headless || !process.stdin.isTTY) {
+      throw new Error('Naver login is required, but this run is non-interactive. Refresh chrome_profile on the VPS or run with CHROME_HEADLESS=0 and complete login manually.');
+    }
     console.log('\nNaver login is required.');
     console.log('Finish the login in the Chrome window that opened, return here, then press Enter.');
     await promptEnter();
