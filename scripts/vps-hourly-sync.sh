@@ -7,12 +7,21 @@ REMOTE="${GIT_REMOTE:-origin}"
 LOCK_FILE="${ROOT_DIR}/.sync-us-insight.lock"
 LOG_DIR="${ROOT_DIR}/logs"
 LOG_FILE="${LOG_DIR}/vps-hourly-sync.log"
+CHROME_PROFILE_DIR="${ROOT_DIR}/chrome_profile"
+
+cleanup_chrome() {
+  if command -v pkill >/dev/null 2>&1; then
+    pkill -f -- "--user-data-dir=${CHROME_PROFILE_DIR}" 2>/dev/null || true
+  fi
+}
 
 mkdir -p "${LOG_DIR}"
 exec >> >(tee -a "${LOG_FILE}") 2>&1
 cd "${ROOT_DIR}"
+trap cleanup_chrome EXIT
 
 echo "[$(date -Is)] starting US Insight sync"
+cleanup_chrome
 
 notify_telegram() {
   local message="$1"
@@ -94,7 +103,7 @@ git checkout "${BRANCH}"
 git pull --ff-only "${REMOTE}" "${BRANCH}"
 
 export CHROME_HEADLESS="${CHROME_HEADLESS:-1}"
-npm run sync:us-insight:new
+timeout --preserve-status 50m npm run sync:us-insight:new
 
 if git diff --quiet -- public/data/posts.json public/docs; then
   echo "[$(date -Is)] no generated content changes"

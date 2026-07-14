@@ -77,12 +77,15 @@ async function main() {
     throw new Error('--scan-limit must be a positive number.');
   }
 
+  let chromeChild = null;
+  let cdp = null;
+  try {
   ensureDir(profileDir);
-  launchChrome({ port, profileDir, url: sourceUrl, headless });
+  chromeChild = launchChrome({ port, profileDir, url: sourceUrl, headless });
 
   const browser = await waitForBrowser(port);
   const tabInfo = await openTab(port, sourceUrl);
-  const cdp = await CDPClient.connect(tabInfo.webSocketDebuggerUrl);
+  cdp = await CDPClient.connect(tabInfo.webSocketDebuggerUrl);
 
   await cdp.send('Page.enable');
   await cdp.send('Runtime.enable');
@@ -104,7 +107,6 @@ async function main() {
 
   if (updateTranscripts) {
     await updateTranscriptSections({ cdp, posts });
-    await cdp.close();
     return;
   }
 
@@ -126,7 +128,6 @@ async function main() {
 
   if (updateIds.length > 0) {
     await updateExistingPosts({ cdp, posts, ids: updateIds });
-    await cdp.close();
     return;
   }
 
@@ -170,7 +171,6 @@ async function main() {
 
   if (newItems.length === 0) {
     console.log('No new posts to import.');
-    await cdp.close();
     return;
   }
 
@@ -221,7 +221,6 @@ async function main() {
     console.log(`Dry run: ${additions.length} posts would be imported.`);
     additions.forEach(({ post }) => console.log(`- #${post.id} ${post.title}`));
     printImportNotification(additions, { dryRun: true });
-    await cdp.close();
     return;
   }
 
@@ -234,8 +233,9 @@ async function main() {
   console.log(`Imported ${additions.length} posts.`);
   additions.forEach(({ post }) => console.log(`- #${post.id} ${post.title}`));
   printImportNotification(additions);
-
-  await cdp.close();
+  } finally {
+    await closeBrowser(cdp, chromeChild);
+  }
 }
 
 function printImportNotification(additions, { dryRun: isPreview = false } = {}) {
@@ -527,6 +527,29 @@ function launchChrome({ port, profileDir, url, headless }) {
     windowsHide: headless,
   });
   child.unref();
+  return child;
+}
+
+async function closeBrowser(cdp, chromeChild) {
+  if (cdp) {
+    try {
+      await cdp.send('Browser.close');
+    } catch {
+      try {
+        cdp.close();
+      } catch {
+        // Ignore cleanup errors; the original sync result is more important.
+      }
+    }
+  }
+
+  if (chromeChild && !chromeChild.killed) {
+    try {
+      chromeChild.kill();
+    } catch {
+      // Ignore cleanup errors; Chrome may have already exited.
+    }
+  }
 }
 
 function findChrome() {
