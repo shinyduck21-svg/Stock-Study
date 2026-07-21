@@ -183,6 +183,9 @@ async function main() {
       await uploadDetectedMedia(item, cdp, {
         pdfOrdinal: koreanOrdinalFromTitle(item.title) || koreanOrdinal(existingAnalysisPdfCount + pdfUploadIndex),
       });
+      if (isRegularClassRecordingTitle(item.title) && !item.driveVideoUrl) {
+        throw new Error(`Regular class recording video was not detected: ${item.sourceUrl}`);
+      }
     }
   }
 
@@ -400,6 +403,14 @@ async function updateExistingPosts({ cdp, posts, ids }) {
     if (!item.markdown) {
       console.warn(`Skipped post id ${id}: scraped markdown was empty.`);
       continue;
+    }
+
+    if (!dryRun && !skipMedia && isRegularClassRecordingTitle(item.title || post.title) && !post.url) {
+      await uploadDetectedMedia(item, cdp, { uploadPdf: false });
+      if (!item.driveVideoUrl) {
+        throw new Error(`Regular class recording video was not detected: ${post.sourceUrl}`);
+      }
+      post.url = item.driveVideoUrl;
     }
 
     if (item.title) post.title = item.title;
@@ -1490,6 +1501,7 @@ async function scrapeContent(cdp, url, fallbackTitle = '') {
         .filter((src) => /\.(mp3|m4a|aac|wav|mp4|m3u8|pdf)(\?|#|$)|audio|video|stream|pdf/i.test(src));
     }
   }, fallbackTitle);
+  const recordingMedia = await activateRegularClassRecording(cdp, data.title || fallbackTitle);
   const tabsBeforeAnalysisClick = await listBrowserTargets(port).catch(() => []);
   const analysisTrigger = await openAnalysisPdfIfAvailable(cdp, data.title || fallbackTitle);
   if (debug && analysisTrigger.opened) console.log(`Opened analysis/PDF trigger: ${analysisTrigger.text}`);
@@ -1523,13 +1535,54 @@ async function scrapeContent(cdp, url, fallbackTitle = '') {
     cleanupMarkdown(turndown.turndown(data.html || data.text || '')),
     transcriptMarkdown,
   );
-  const domMedia = [...data.media, ...clickedMedia].map((url) => mediaFromUrl(url, '')).filter(Boolean);
+  const domMedia = [...data.media, ...recordingMedia, ...clickedMedia].map((url) => mediaFromUrl(url, '')).filter(Boolean);
   return {
     ...data,
     title: cleanupTitle(data.title),
     markdown,
     media: dedupeMedia([...domMedia, ...analysisMedia, ...browserPdfMedia, ...networkMedia, ...downloadMedia]),
   };
+}
+
+async function activateRegularClassRecording(cdp, title) {
+  if (!isRegularClassRecordingTitle(title)) return [];
+
+  const activation = await evaluate(cdp, () => {
+    const videos = Array.from(document.querySelectorAll('video'));
+    videos.forEach((video) => {
+      video.muted = true;
+      video.preload = 'auto';
+      video.play().catch(() => {});
+    });
+
+    const playPattern = /(?:\uC7AC\uC0DD|play)/i;
+    const candidates = Array.from(document.querySelectorAll('button, [role="button"], [aria-label], [title]'))
+      .map((node) => {
+        const rect = node.getBoundingClientRect();
+        const label = [
+          node.innerText,
+          node.textContent,
+          node.getAttribute('aria-label'),
+          node.getAttribute('title'),
+        ].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+        return { node, label, rect, visible: rect.width > 0 && rect.height > 0 };
+      })
+      .filter((item) => item.visible && playPattern.test(item.label))
+      .sort((a, b) => (a.rect.width * a.rect.height) - (b.rect.width * b.rect.height));
+
+    candidates[0]?.node.click();
+    return { videoCount: videos.length, clicked: candidates[0]?.label || '' };
+  });
+
+  if (debug) {
+    console.log(`Activated regular class recording player: videos=${activation.videoCount} control="${activation.clicked}"`);
+  }
+  await delay(4000);
+  return collectVisibleMediaUrls(cdp);
+}
+
+function isRegularClassRecordingTitle(title) {
+  return /\uC815\uADDC\s*\uC218\uC5C5\s*\uB179\uD654\uBCF8/.test(String(title || ''));
 }
 
 async function openTranscriptIfAvailableStable(cdp) {
@@ -2095,7 +2148,7 @@ function mediaFromUrl(url, mimeType) {
   if (/\.(mp3|m4a|aac|wav)(\?|$)|audio\//i.test(`${cleanUrl} ${mimeType}`)) {
     return { kind: 'audio', url: cleanUrl, mimeType: mimeType || guessMimeType(cleanUrl) || 'audio/mpeg' };
   }
-  if (/\.(mp4|m3u8)(\?|$)|video\//i.test(`${cleanUrl} ${mimeType}`)) {
+  if (/\.(mp4|m3u8)(\?|$)|video\/|application\/(?:vnd\.apple\.mpegurl|x-mpegurl)/i.test(`${cleanUrl} ${mimeType}`)) {
     return { kind: 'video', url: cleanUrl, mimeType: mimeType || guessMimeType(cleanUrl) || 'video/mp4' };
   }
   if (/\.pdf(\?|$)|application\/pdf|pdf/i.test(`${cleanUrl} ${mimeType}`)) {
@@ -2113,9 +2166,9 @@ function dedupeMedia(media) {
   });
 }
 
-async function uploadDetectedMedia(item, cdp, { pdfOrdinal } = {}) {
-  const media = item.media.find((entry) => entry.kind === 'video') || item.media.find((entry) => entry.kind === 'audio');
-  const pdf = item.media.find((entry) => entry.kind === 'pdf');
+async function uploadDetectedMedia(item, cdp, { pdfOrdinal, uploadPdf = true } = {}) {
+  const media = selectMediaForUpload(item);
+  const pdf = uploadPdf ? item.media.find((entry) => entry.kind === 'pdf') : null;
   if (!media && !pdf) return;
 
   const headers = await browserHeaders(cdp, item.sourceUrl);
@@ -2124,11 +2177,11 @@ async function uploadDetectedMedia(item, cdp, { pdfOrdinal } = {}) {
     console.log(`Downloading media for upload: ${media.url}`);
     const extension = extensionForMedia(media);
     const localPath = resolve(tempDir, `${sanitizeFilename(item.title).slice(0, 80) || 'media'}-${Date.now()}${extension}`);
-    const mimeType = media.mimeType.includes('mpegurl') || media.url.includes('.m3u8')
+    const mimeType = isHlsMedia(media)
       ? 'video/mp2t'
       : media.mimeType || guessMimeType(localPath) || 'application/octet-stream';
 
-    if (media.url.includes('.m3u8')) {
+    if (isHlsMedia(media)) {
       await downloadHls(media.url, localPath, headers);
     } else {
       await downloadBinary(media.url, localPath, headers);
@@ -2149,6 +2202,28 @@ async function uploadDetectedMedia(item, cdp, { pdfOrdinal } = {}) {
     item.drivePdfUrl = drive.webViewLink || `https://drive.google.com/file/d/${drive.id}/view?usp=drive_link`;
     rmSync(localPath, { force: true });
   }
+}
+
+function selectMediaForUpload(item) {
+  const candidates = item.media
+    .map((media, index) => ({ media, index, score: mediaUploadScore(media, item.title) }))
+    .filter((candidate) => candidate.score > 0)
+    .sort((a, b) => b.score - a.score || a.index - b.index);
+  return candidates[0]?.media || null;
+}
+
+function mediaUploadScore(media, title) {
+  if (!media || !['video', 'audio'].includes(media.kind)) return 0;
+  const descriptor = `${media.url || ''} ${media.mimeType || ''}`;
+  if (/\.ts(?:\?|$)|video\/mp2t/i.test(descriptor)) return 0;
+
+  if (media.kind === 'video') {
+    if (/\.m3u8(?:\?|$)|application\/(?:vnd\.apple\.mpegurl|x-mpegurl)/i.test(descriptor)) return 400;
+    if (/\.mp4(?:\?|$)|video\/mp4/i.test(descriptor)) return 300;
+    return 200;
+  }
+
+  return isRegularClassRecordingTitle(title) ? 0 : 100;
 }
 
 async function browserHeaders(cdp, referer) {
@@ -2266,10 +2341,14 @@ async function getGoogleAccessToken() {
 }
 
 function extensionForMedia(media) {
-  if (media.url.includes('.m3u8')) return '.mp4';
+  if (isHlsMedia(media)) return '.mp4';
   const match = new URL(media.url).pathname.match(/\.(mp3|m4a|aac|wav|mp4)$/i);
   if (match) return `.${match[1].toLowerCase()}`;
   return media.kind === 'audio' ? '.mp3' : '.mp4';
+}
+
+function isHlsMedia(media) {
+  return /\.m3u8(?:\?|$)|application\/(?:vnd\.apple\.mpegurl|x-mpegurl)/i.test(`${media?.url || ''} ${media?.mimeType || ''}`);
 }
 
 function guessMimeType(pathOrUrl) {
