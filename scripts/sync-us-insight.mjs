@@ -141,6 +141,20 @@ async function main() {
   const existingTitles = new Set(posts.map((post) => normalizeTitle(post.title)).filter(Boolean));
   const targetLinks = selectTargetLinks(links, existingSources);
 
+  if (!dryRun && !skipMedia) {
+    const postsBySource = new Map(posts
+      .filter((post) => post.sourceUrl)
+      .map((post) => [normalizeUrl(post.sourceUrl), post]));
+    const missingMorningAudioIds = targetLinks
+      .map((link) => postsBySource.get(normalizeUrl(link.url)))
+      .filter((post) => post && isGoodMorningEpisodeTitle(post.title) && !post.audioUrl)
+      .map((post) => Number(post.id));
+    if (missingMorningAudioIds.length > 0) {
+      console.log(`Retrying missing Good Morning audio for posts: ${missingMorningAudioIds.join(', ')}`);
+      await updateExistingPosts({ cdp, posts, ids: missingMorningAudioIds });
+    }
+  }
+
   if (debug && allNew) {
     console.log(`Selected ${targetLinks.length} links from the latest scan window.`);
   }
@@ -157,6 +171,7 @@ async function main() {
     const item = await scrapeContent(cdp, link.url, link.title);
     if (debug) {
       console.log(`Scraped title="${item.title}" markdownLength=${item.markdown.length} media=${item.media.length}`);
+      item.media.forEach((media) => console.log(`Detected ${media.kind} media: ${media.url}`));
       if (!item.markdown) console.log(`Text sample: ${item.text?.slice(0, 500) || ''}`);
     }
     if (!item.title || !item.markdown) {
@@ -171,6 +186,10 @@ async function main() {
     }
     if (dryRun && item.media.length > 0) {
       console.log(`Detected media: ${item.media.map((media) => media.url).join(', ')}`);
+    }
+    if (isGoodMorningEpisodeTitle(item.title) && !item.media.some((media) => media.kind === 'audio')) {
+      console.warn(`Deferred Good Morning post because audio is not ready: ${item.sourceUrl}`);
+      continue;
     }
     newItems.push(item);
   }
@@ -188,7 +207,11 @@ async function main() {
       if (hasPdf(item)) pdfUploadIndex += 1;
       await uploadDetectedMedia(item, cdp, {
         pdfOrdinal: koreanOrdinalFromTitle(item.title) || koreanOrdinal(existingAnalysisPdfCount + pdfUploadIndex),
+        requiredKind: isGoodMorningEpisodeTitle(item.title) ? 'audio' : undefined,
       });
+      if (isGoodMorningEpisodeTitle(item.title) && !item.driveAudioUrl) {
+        throw new Error(`Good Morning audio upload did not complete: ${item.sourceUrl}`);
+      }
       if (isRegularClassRecordingTitle(item.title) && !item.driveVideoUrl) {
         throw new Error(`Regular class recording video was not detected: ${item.sourceUrl}`);
       }
@@ -404,11 +427,24 @@ async function updateExistingPosts({ cdp, posts, ids }) {
     const item = await scrapeContent(cdp, post.sourceUrl, post.title);
     if (debug) {
       console.log(`Scraped title="${item.title}" markdownLength=${item.markdown.length} media=${item.media.length}`);
+      item.media.forEach((media) => console.log(`Detected ${media.kind} media: ${media.url}`));
       if (!item.markdown) console.log(`Text sample: ${item.text?.slice(0, 500) || ''}`);
     }
     if (!item.markdown) {
       console.warn(`Skipped post id ${id}: scraped markdown was empty.`);
       continue;
+    }
+
+    if (!dryRun && !skipMedia && isGoodMorningEpisodeTitle(item.title || post.title) && !post.audioUrl) {
+      if (!item.media.some((media) => media.kind === 'audio')) {
+        console.warn(`Good Morning audio is still not ready for post ${id}; retrying on the next sync.`);
+        continue;
+      }
+      await uploadDetectedMedia(item, cdp, { uploadPdf: false, requiredKind: 'audio' });
+      if (!item.driveAudioUrl) {
+        throw new Error(`Good Morning audio upload did not complete: ${post.sourceUrl}`);
+      }
+      post.audioUrl = item.driveAudioUrl;
     }
 
     if (!dryRun && !skipMedia && isRegularClassRecordingTitle(item.title || post.title) && !post.url) {
@@ -429,7 +465,7 @@ async function updateExistingPosts({ cdp, posts, ids }) {
     });
     post.type = postType;
     post.category = classifyCategory(item, postType, post.category);
-    writeFileSync(resolve(docsDir, post.fileName), buildMarkdown(item), 'utf8');
+    if (!dryRun) writeFileSync(resolve(docsDir, post.fileName), buildMarkdown(item), 'utf8');
     updated += 1;
   }
 
@@ -1634,6 +1670,10 @@ function isRegularClassRecordingTitle(title) {
   return /\uC815\uADDC\s*\uC218\uC5C5\s*\uB179\uD654\uBCF8/.test(String(title || ''));
 }
 
+function isGoodMorningEpisodeTitle(title) {
+  return /^\d+\s*\uD654\.\s*(?:\uD83C\uDF1E\s*)?\d{1,2}\s*\uC6D4\s*\d{1,2}\s*\uC77C.*\uAD7F\uBAA8\uB2DD\s*\uB2F4[\uC3D8\uC0D8]/.test(String(title || ''));
+}
+
 async function openTranscriptIfAvailableStable(cdp) {
   const result = await evaluate(cdp, () => {
     const transcriptButtonPattern = /(?:\uC2A4\uD06C\uB9BD\uD2B8\s*\uBCF4\uAE30|transcript|script)/i;
@@ -2215,8 +2255,8 @@ function dedupeMedia(media) {
   });
 }
 
-async function uploadDetectedMedia(item, cdp, { pdfOrdinal, uploadPdf = true } = {}) {
-  const media = selectMediaForUpload(item);
+async function uploadDetectedMedia(item, cdp, { pdfOrdinal, uploadPdf = true, requiredKind } = {}) {
+  const media = selectMediaForUpload(item, requiredKind);
   const pdf = uploadPdf ? item.media.find((entry) => entry.kind === 'pdf') : null;
   if (!media && !pdf) return;
 
@@ -2253,8 +2293,9 @@ async function uploadDetectedMedia(item, cdp, { pdfOrdinal, uploadPdf = true } =
   }
 }
 
-function selectMediaForUpload(item) {
+function selectMediaForUpload(item, requiredKind) {
   const candidates = item.media
+    .filter((media) => !requiredKind || media.kind === requiredKind)
     .map((media, index) => ({ media, index, score: mediaUploadScore(media, item.title) }))
     .filter((candidate) => candidate.score > 0)
     .sort((a, b) => b.score - a.score || a.index - b.index);
