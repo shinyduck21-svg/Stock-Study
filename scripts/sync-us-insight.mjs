@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import readline from 'node:readline/promises';
@@ -40,6 +40,7 @@ const gdriveFolderId = args.gdriveFolderId || DEFAULT_GDRIVE_FOLDER_ID;
 const pdfGdriveFolderId = args.pdfGdriveFolderId || process.env.PDF_GDRIVE_FOLDER_ID || DEFAULT_PDF_GDRIVE_FOLDER_ID;
 const publicBaseUrl = normalizePublicBaseUrl(args.publicBaseUrl || process.env.PUBLIC_SITE_URL || 'https://shinyduck21-svg.github.io/Stock-Study/');
 const updateIds = parseIdList(args.updateIds || args.updateId || '');
+const probeMediaIds = parseIdList(args.probeMediaIds || args.probeMediaId || '');
 
 const postsPath = resolve(rootDir, 'public/data/posts.json');
 const docsDir = resolve(rootDir, 'public/docs');
@@ -104,6 +105,11 @@ async function main() {
   }
 
   const posts = readJson(postsPath);
+
+  if (probeMediaIds.length > 0) {
+    await probeExistingPostMedia({ cdp, posts, ids: probeMediaIds });
+    return;
+  }
 
   if (updateTranscripts) {
     await updateTranscriptSections({ cdp, posts });
@@ -1555,7 +1561,18 @@ async function activateRegularClassRecording(cdp, title) {
       video.play().catch(() => {});
     });
 
-    const playPattern = /(?:\uC7AC\uC0DD|play)/i;
+    const playPattern = /^(?:\uC7AC\uC0DD|play|play video)$/i;
+    const playImages = Array.from(document.querySelectorAll('img'))
+      .filter((image) => /(?:IC_play|play)/i.test(`${image.getAttribute('src') || ''} ${image.getAttribute('alt') || ''}`))
+      .map((image) => {
+        image.scrollIntoView({ block: 'center', inline: 'center' });
+        const rect = image.getBoundingClientRect();
+        return {
+          label: image.getAttribute('alt') || image.getAttribute('src') || '',
+          rect: { x: rect.left, y: rect.top, width: rect.width, height: rect.height },
+        };
+      })
+      .filter((item) => item.rect.width > 0 && item.rect.height > 0);
     const candidates = Array.from(document.querySelectorAll('button, [role="button"], [aria-label], [title]'))
       .map((node) => {
         const rect = node.getBoundingClientRect();
@@ -1571,13 +1588,45 @@ async function activateRegularClassRecording(cdp, title) {
       .sort((a, b) => (a.rect.width * a.rect.height) - (b.rect.width * b.rect.height));
 
     candidates[0]?.node.click();
-    return { videoCount: videos.length, clicked: candidates[0]?.label || '' };
+    return {
+      videoCount: videos.length,
+      clicked: candidates[0]?.label || '',
+      playImages,
+      videos: videos.map((video) => ({
+        src: video.getAttribute('src') || '',
+        currentSrc: video.currentSrc || '',
+        readyState: video.readyState,
+        networkState: video.networkState,
+        rect: (() => {
+          const rect = video.getBoundingClientRect();
+          return { x: rect.left, y: rect.top, width: rect.width, height: rect.height };
+        })(),
+      })),
+    };
   });
+
+  const visibleVideo = activation.videos.find((video) => video.rect.width > 0 && video.rect.height > 0);
+  const clickTarget = activation.playImages[0] || visibleVideo;
+  if (clickTarget) {
+    const x = clickTarget.rect.x + clickTarget.rect.width / 2;
+    const y = clickTarget.rect.y + clickTarget.rect.height / 2;
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 });
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 });
+  }
 
   if (debug) {
     console.log(`Activated regular class recording player: videos=${activation.videoCount} control="${activation.clicked}"`);
+    activation.playImages.forEach((image) => console.log(`Play image: ${JSON.stringify(image)}`));
+    activation.videos.forEach((video) => console.log(`Video element: ${JSON.stringify(video)}`));
   }
   await delay(4000);
+  if (debug) {
+    const resources = await evaluate(cdp, () => performance.getEntriesByType('resource')
+      .map((entry) => ({ name: entry.name, initiatorType: entry.initiatorType }))
+      .filter((entry) => /video|media|stream|\.mpd|\.m3u8|\.mp4|cloudfront/i.test(`${entry.initiatorType} ${entry.name}`))
+      .slice(-30));
+    resources.forEach((resource) => console.log(`Video resource candidate: ${resource.initiatorType} ${resource.name}`));
+  }
   return collectVisibleMediaUrls(cdp);
 }
 
@@ -2226,6 +2275,61 @@ function mediaUploadScore(media, title) {
   return isRegularClassRecordingTitle(title) ? 0 : 100;
 }
 
+async function probeExistingPostMedia({ cdp, posts, ids }) {
+  ensureDir(tempDir);
+
+  for (const id of ids) {
+    const post = posts.find((item) => Number(item.id) === id);
+    if (!post?.sourceUrl) throw new Error(`Post ${id} or its sourceUrl was not found.`);
+
+    console.log(`Probing media for #${id}: ${post.sourceUrl}`);
+    const item = await scrapeContent(cdp, post.sourceUrl, post.title);
+    const media = selectMediaForUpload(item);
+    if (!media || media.kind !== 'video') {
+      const diagnostics = await evaluate(cdp, () => Array.from(document.querySelectorAll('button, a[href], [role="button"], iframe'))
+        .map((node) => {
+          const rect = node.getBoundingClientRect();
+          return {
+            tag: node.tagName,
+            text: (node.innerText || node.textContent || node.getAttribute('aria-label') || node.getAttribute('title') || '').replace(/\s+/g, ' ').trim().slice(0, 160),
+            href: node.getAttribute('href') || node.getAttribute('src') || '',
+            width: Math.round(rect.width),
+            height: Math.round(rect.height),
+            top: Math.round(rect.top + window.scrollY),
+            className: String(node.className || '').slice(0, 120),
+          };
+        })
+        .filter((entry) => entry.width > 0 && entry.height > 0)
+        .filter((entry) => entry.top < 3500 || /\uB179\uD654|\uC601\uC0C1|\uC7AC\uC0DD|video|play|media|stream/i.test(`${entry.text} ${entry.href}`))
+        .slice(0, 80));
+      diagnostics.forEach((entry) => console.log(`Visible media control: ${JSON.stringify(entry)}`));
+      const screenshot = await cdp.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true });
+      const screenshotPath = resolve(tempDir, `probe-${id}-page.png`);
+      writeFileSync(screenshotPath, Buffer.from(screenshot.data, 'base64'));
+      console.log(`Media probe screenshot: ${screenshotPath}`);
+      throw new Error(`Video media was not detected for post ${id}.`);
+    }
+
+    const extension = extensionForMedia(media);
+    const localPath = resolve(tempDir, `probe-${id}-${Date.now()}${extension}`);
+    const headers = await browserHeaders(cdp, post.sourceUrl);
+    console.log(`Downloading probe video: ${media.url}`);
+
+    try {
+      if (isHlsMedia(media)) {
+        await downloadHls(media.url, localPath, headers);
+      } else {
+        await downloadBinary(media.url, localPath, headers);
+      }
+      const bytes = statSync(localPath).size;
+      if (bytes === 0) throw new Error(`Downloaded video for post ${id} was empty.`);
+      console.log(`Media probe succeeded for #${id}: ${(bytes / 1024 / 1024).toFixed(1)} MB downloaded.`);
+    } finally {
+      rmSync(localPath, { force: true });
+    }
+  }
+}
+
 async function browserHeaders(cdp, referer) {
   const cookiesResult = await cdp.send('Network.getAllCookies').catch(() => ({ cookies: [] }));
   const userAgent = await evaluate(cdp, () => navigator.userAgent);
@@ -2262,13 +2366,12 @@ async function downloadHls(url, outputPath, headers) {
     .filter((line) => line && !line.startsWith('#'))
     .map((line) => new URL(line, playlistUrl).href);
 
-  const buffers = [];
+  writeFileSync(outputPath, Buffer.alloc(0));
   for (const segmentUrl of segmentUrls) {
     const response = await fetch(segmentUrl, { headers });
     if (!response.ok) throw new Error(`HLS segment download failed: HTTP ${response.status} ${segmentUrl}`);
-    buffers.push(Buffer.from(await response.arrayBuffer()));
+    appendFileSync(outputPath, Buffer.from(await response.arrayBuffer()));
   }
-  writeFileSync(outputPath, Buffer.concat(buffers));
 }
 
 function chooseVariant(playlist, playlistUrl) {
