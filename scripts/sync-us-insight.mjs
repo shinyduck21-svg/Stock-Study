@@ -142,12 +142,8 @@ async function main() {
   const targetLinks = selectTargetLinks(links, existingSources);
 
   if (!dryRun && !skipMedia) {
-    const postsBySource = new Map(posts
-      .filter((post) => post.sourceUrl)
-      .map((post) => [normalizeUrl(post.sourceUrl), post]));
-    const missingMorningAudioIds = targetLinks
-      .map((link) => postsBySource.get(normalizeUrl(link.url)))
-      .filter((post) => post && isGoodMorningEpisodeTitle(post.title) && !post.audioUrl)
+    const missingMorningAudioIds = posts
+      .filter((post) => post.sourceUrl && isGoodMorningEpisodeTitle(post.title) && !post.audioUrl)
       .map((post) => Number(post.id));
     if (missingMorningAudioIds.length > 0) {
       console.log(`Retrying missing Good Morning audio for posts: ${missingMorningAudioIds.join(', ')}`);
@@ -412,6 +408,7 @@ function upsertTranscriptSection(markdown, transcriptMarkdown) {
 
 async function updateExistingPosts({ cdp, posts, ids }) {
   let updated = 0;
+  const repairedAudioIds = [];
   for (const id of ids) {
     const post = posts.find((item) => Number(item.id) === id);
     if (!post) {
@@ -445,6 +442,7 @@ async function updateExistingPosts({ cdp, posts, ids }) {
         throw new Error(`Good Morning audio upload did not complete: ${post.sourceUrl}`);
       }
       post.audioUrl = item.driveAudioUrl;
+      repairedAudioIds.push(id);
     }
 
     if (!dryRun && !skipMedia && isRegularClassRecordingTitle(item.title || post.title) && !post.url) {
@@ -473,6 +471,9 @@ async function updateExistingPosts({ cdp, posts, ids }) {
     writeFileSync(postsPath, `${JSON.stringify(posts, null, 4)}\n`, 'utf8');
   }
   console.log(`${dryRun ? 'Dry run: ' : ''}Updated ${updated} existing posts.`);
+  if (repairedAudioIds.length > 0) {
+    console.log(`AUDIO_REPAIRED_IDS=${repairedAudioIds.join(',')}`);
+  }
 }
 
 function parseIdList(value) {
@@ -1671,7 +1672,7 @@ function isRegularClassRecordingTitle(title) {
 }
 
 function isGoodMorningEpisodeTitle(title) {
-  return /^\d+\s*\uD654\.\s*(?:\uD83C\uDF1E\s*)?\d{1,2}\s*\uC6D4\s*\d{1,2}\s*\uC77C.*\uAD7F\uBAA8\uB2DD\s*\uB2F4[\uC3D8\uC0D8]/.test(String(title || ''));
+  return /^\d+\s*\uD654\.\s*(?:\uD83C\uDF1E\s*)?\d{1,2}\s*\uC6D4\s*\d{1,2}\s*\uC77C.*\uAD7F\uBAA8\uB2DD\s*\uB2F4[\uC324\uC0D8]/.test(String(title || ''));
 }
 
 async function openTranscriptIfAvailableStable(cdp) {

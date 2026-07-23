@@ -9,6 +9,7 @@ LOG_DIR="${ROOT_DIR}/logs"
 LOG_FILE="${LOG_DIR}/vps-hourly-sync.log"
 CHROME_PROFILE_DIR="${ROOT_DIR}/chrome_profile"
 DISCORD_ENV_FILE="${DISCORD_ENV_FILE:-${HOME}/.config/stock-study/discord.env}"
+SYNC_OUTPUT_FILE=""
 
 if [[ -f "${DISCORD_ENV_FILE}" ]]; then
   set -a
@@ -44,6 +45,9 @@ notify_discord() {
 handle_exit() {
   local status=$?
   cleanup_chrome
+  if [[ -n "${SYNC_OUTPUT_FILE}" ]]; then
+    rm -f "${SYNC_OUTPUT_FILE}"
+  fi
 
   if [[ "${status}" -ne 0 ]]; then
     notify_discord "[FAILED] Stock-Study sync exited with status ${status}. Check ${LOG_FILE}."
@@ -118,6 +122,28 @@ function cleanTitle(value) {
 NODE
 }
 
+build_audio_repair_message() {
+  local repaired_ids="$1"
+
+  node --input-type=module - "${repaired_ids}" <<'NODE'
+import { readFileSync } from 'node:fs';
+
+const repairedIds = new Set(String(process.argv[2] || '')
+  .split(',')
+  .map((value) => Number(value.trim()))
+  .filter(Number.isFinite));
+const posts = JSON.parse(readFileSync('public/data/posts.json', 'utf8'));
+const repairedPosts = posts.filter((post) => repairedIds.has(Number(post.id)));
+const lines = ['[오디오 복구]', ''];
+
+repairedPosts.forEach((post, index) => {
+  lines.push(`${index + 1}. ${post.title || `게시글 ${post.id}`}`);
+});
+
+console.log(lines.join('\n'));
+NODE
+}
+
 exec 9>"${LOCK_FILE}"
 if ! flock -n 9; then
   echo "[$(date -Is)] another sync is already running; exiting"
@@ -140,7 +166,9 @@ git checkout "${BRANCH}"
 git pull --ff-only "${REMOTE}" "${BRANCH}"
 
 export CHROME_HEADLESS="${CHROME_HEADLESS:-1}"
-timeout --preserve-status 50m npm run sync:us-insight:new
+SYNC_OUTPUT_FILE="$(mktemp)"
+timeout --preserve-status 50m npm run sync:us-insight:new 2>&1 | tee "${SYNC_OUTPUT_FILE}"
+AUDIO_REPAIRED_IDS="$(sed -n 's/^AUDIO_REPAIRED_IDS=//p' "${SYNC_OUTPUT_FILE}" | tail -n 1)"
 
 if git diff --quiet -- public/data/posts.json public/docs; then
   echo "[$(date -Is)] no generated content changes"
@@ -161,6 +189,11 @@ NEW_POST_COUNT="$(printf '%s\n' "${STAGED_NEW_DOCS}" | sed '/^$/d' | wc -l | tr 
 COMMIT_TIME="$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M KST')"
 git commit -m "chore: sync US Insight posts ${COMMIT_TIME}"
 git push "${REMOTE}" "HEAD:${BRANCH}"
+
+if [[ -n "${AUDIO_REPAIRED_IDS}" ]]; then
+  AUDIO_REPAIR_MESSAGE="$(build_audio_repair_message "${AUDIO_REPAIRED_IDS}")"
+  notify_discord "${AUDIO_REPAIR_MESSAGE}"
+fi
 
 if [[ "${NEW_POST_COUNT}" -gt 0 ]]; then
   POST_LIST_MESSAGE="$(build_post_list_message "${NEW_POST_COUNT}" "${STAGED_NEW_DOCS}")"
