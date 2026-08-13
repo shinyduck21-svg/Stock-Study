@@ -1,11 +1,13 @@
 import { spawn, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import readline from 'node:readline/promises';
 import TurndownService from 'turndown';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const scriptPath = fileURLToPath(import.meta.url);
+const __dirname = dirname(scriptPath);
 const rootDir = resolve(__dirname, '..');
 
 const DEFAULT_SOURCE = 'https://us-insight.com/club/13/contents?type=all';
@@ -15,6 +17,7 @@ const DEFAULT_PROFILE_DIR = resolve(rootDir, 'chrome_profile');
 const DEFAULT_PORT = 9222;
 const DEFAULT_SCAN_LIMIT = 15;
 const DEFAULT_GDRIVE_FOLDER_ID = '1v9H6SxCxIelFLW_nfDkOYjZFX3t_3nNC';
+const DEFAULT_VIDEO_GDRIVE_FOLDER_ID = '1y-84vBP6Rx9SqYyZ43LXAp8OfJVtZorx';
 const DEFAULT_PDF_GDRIVE_FOLDER_ID = '1EkXlDqs50uyvS-UHcOP9RtoiCY-7Yg1L';
 
 const args = parseArgs(process.argv.slice(2));
@@ -37,6 +40,7 @@ const force = Boolean(args.force);
 const skipMedia = Boolean(args.skipMedia);
 const updateTranscripts = Boolean(args.updateTranscripts || args.updateTranscript);
 const gdriveFolderId = args.gdriveFolderId || DEFAULT_GDRIVE_FOLDER_ID;
+const videoGdriveFolderId = args.videoGdriveFolderId || process.env.VIDEO_GDRIVE_FOLDER_ID || DEFAULT_VIDEO_GDRIVE_FOLDER_ID;
 const pdfGdriveFolderId = args.pdfGdriveFolderId || process.env.PDF_GDRIVE_FOLDER_ID || DEFAULT_PDF_GDRIVE_FOLDER_ID;
 const publicBaseUrl = normalizePublicBaseUrl(args.publicBaseUrl || process.env.PUBLIC_SITE_URL || 'https://shinyduck21-svg.github.io/Stock-Study/');
 const updateIds = parseIdList(args.updateIds || args.updateId || '');
@@ -65,10 +69,12 @@ turndown.addRule('images', {
   },
 });
 
-main().catch((error) => {
-  console.error(error?.stack || error);
-  process.exitCode = 1;
-});
+if (process.argv[1] && resolve(process.argv[1]) === resolve(scriptPath)) {
+  main().catch((error) => {
+    console.error(error?.stack || error);
+    process.exitCode = 1;
+  });
+}
 
 async function main() {
   if ((!Number.isFinite(limit) && !allNew) || limit < 1) {
@@ -1552,7 +1558,9 @@ async function scrapeContent(cdp, url, fallbackTitle = '') {
     console.log(`No analysis/PDF trigger opened. Candidates: ${analysisTrigger.candidates?.join(' | ') || '(none)'}`);
   }
   const clickedMedia = analysisTrigger.opened ? await collectVisibleMediaUrls(cdp) : [];
-  const analysisMedia = analysisTrigger.url ? [{ kind: 'pdf', url: analysisTrigger.url, mimeType: 'application/pdf' }] : [];
+  const analysisMedia = analysisTrigger.url
+    ? [mediaFromUrl(analysisTrigger.url, '')].filter((media) => media?.kind === 'pdf')
+    : [];
   const browserPdfMedia = analysisTrigger.opened ? await collectNewBrowserPdfViewerMedia(port, tabsBeforeAnalysisClick) : [];
   if (debug && browserPdfMedia.length > 0) {
     browserPdfMedia.forEach((media) => console.log(`Detected PDF viewer media: ${media.url}`));
@@ -1706,13 +1714,30 @@ async function openTranscriptIfAvailableStable(cdp) {
 }
 
 async function openAnalysisPdfIfAvailable(cdp, title = '') {
-  const result = await evaluate(cdp, (titleText) => {
-    const pageText = `${titleText || ''}\n${document.body?.innerText || ''}`;
-    if (!/기업분석도감|기업분석|pdf|PDF|자료|다운로드|첨부/.test(pageText)) {
+  const analysisPost = isAnalysisPostTitle(title);
+  const result = await evaluate(cdp, (titleText, isAnalysisPost) => {
+    const explicitPdfTrigger = Array.from(document.querySelectorAll('a[href], button, [role="button"], [data-url], [data-href], [data-download-url], [data-file-url]'))
+      .some((node) => {
+        const descriptor = [
+          node.innerText,
+          node.textContent,
+          node.getAttribute('aria-label'),
+          node.getAttribute('title'),
+          node.getAttribute('href'),
+          node.getAttribute('data-url'),
+          node.getAttribute('data-href'),
+          node.getAttribute('data-download-url'),
+          node.getAttribute('data-file-url'),
+        ].filter(Boolean).join(' ');
+        return /(?:\.pdf(?:[?#]|$)|\bPDF\b)/i.test(descriptor);
+      });
+    if (!isAnalysisPost && !explicitPdfTrigger) {
       return { opened: false, text: '' };
     }
 
-    const triggerPattern = /(?:기업\s*분석|기업분석도감|PDF|pdf|자료|다운로드|첨부|파일)/i;
+    const triggerPattern = isAnalysisPost
+      ? /(?:기업\s*분석|기업분석도감|PDF|pdf|자료|다운로드|첨부|파일)/i
+      : /(?:\.pdf(?:[?#]|$)|\bPDF\b)/i;
     const candidates = Array.from(document.querySelectorAll('button, a[href], [role="button"], [tabindex], div, span'))
       .map((node) => {
         const rect = node.getBoundingClientRect();
@@ -1839,7 +1864,7 @@ async function openAnalysisPdfIfAvailable(cdp, title = '') {
 
       return node;
     }
-  }, title);
+  }, title, analysisPost);
 
   if (!result.opened) return result;
   if (Number.isFinite(result.x) && Number.isFinite(result.y)) {
@@ -1868,6 +1893,10 @@ async function openAnalysisPdfIfAvailable(cdp, title = '') {
   await autoScroll(cdp);
   await delay(3000);
   return result;
+}
+
+export function isAnalysisPostTitle(title) {
+  return /\[\s*기업\s*분석도감\s*\]/.test(String(title || ''));
 }
 
 async function collectVisibleMediaUrls(cdp) {
@@ -2232,16 +2261,17 @@ function sinoKoreanNumber(number) {
   return result || digits[number] || String(number);
 }
 
-function mediaFromUrl(url, mimeType) {
+export function mediaFromUrl(url, mimeType) {
   if (!url || /^blob:/i.test(url) || /^data:/i.test(url)) return null;
   const cleanUrl = String(url);
+  const normalizedMimeType = String(mimeType || '').split(';', 1)[0].trim().toLowerCase();
   if (/\.(mp3|m4a|aac|wav)(\?|$)|audio\//i.test(`${cleanUrl} ${mimeType}`)) {
     return { kind: 'audio', url: cleanUrl, mimeType: mimeType || guessMimeType(cleanUrl) || 'audio/mpeg' };
   }
   if (/\.(mp4|m3u8)(\?|$)|video\/|application\/(?:vnd\.apple\.mpegurl|x-mpegurl)/i.test(`${cleanUrl} ${mimeType}`)) {
     return { kind: 'video', url: cleanUrl, mimeType: mimeType || guessMimeType(cleanUrl) || 'video/mp4' };
   }
-  if (/\.pdf(\?|$)|application\/pdf|pdf/i.test(`${cleanUrl} ${mimeType}`)) {
+  if (/\.pdf(?:[?#]|$)/i.test(cleanUrl) || normalizedMimeType === 'application/pdf') {
     return { kind: 'pdf', url: cleanUrl, mimeType: mimeType || 'application/pdf' };
   }
   return null;
@@ -2271,26 +2301,41 @@ async function uploadDetectedMedia(item, cdp, { pdfOrdinal, uploadPdf = true, re
       ? 'video/mp2t'
       : media.mimeType || guessMimeType(localPath) || 'application/octet-stream';
 
-    if (isHlsMedia(media)) {
-      await downloadHls(media.url, localPath, headers);
-    } else {
-      await downloadBinary(media.url, localPath, headers);
-    }
+    try {
+      if (isHlsMedia(media)) {
+        await downloadHls(media.url, localPath, headers);
+      } else {
+        await downloadBinary(media.url, localPath, headers);
+      }
 
-    const drive = await uploadToDrive(localPath, `${sanitizeFilename(item.title)}${extension}`, mimeType);
-    if (media.kind === 'video') item.driveVideoUrl = `https://drive.google.com/file/d/${drive.id}/preview`;
-    if (media.kind === 'audio') item.driveAudioUrl = `https://drive.google.com/file/d/${drive.id}`;
-    rmSync(localPath, { force: true });
+      const drive = await uploadToDrive(localPath, `${sanitizeFilename(item.title)}${extension}`, mimeType, {
+        folderId: driveFolderForMediaKind(media.kind, {
+          audioFolderId: gdriveFolderId,
+          videoFolderId: videoGdriveFolderId,
+        }),
+        dedupeKey: driveMediaDedupeKey(item, media.kind),
+      });
+      if (media.kind === 'video') item.driveVideoUrl = `https://drive.google.com/file/d/${drive.id}/preview`;
+      if (media.kind === 'audio') item.driveAudioUrl = `https://drive.google.com/file/d/${drive.id}`;
+    } finally {
+      rmSync(localPath, { force: true });
+    }
   }
 
   if (pdf) {
     console.log(`Downloading PDF for upload: ${pdf.url}`);
     const localPath = resolve(tempDir, `${sanitizeFilename(item.title).slice(0, 80) || 'analysis'}-${Date.now()}.pdf`);
-    await downloadBinary(pdf.url, localPath, headers);
-    const fileName = `서재형 투자학교 여름학기 ${pdfOrdinal || '다음'} 기업분석도감.pdf`;
-    const drive = await uploadToDrive(localPath, fileName, 'application/pdf', { folderId: pdfGdriveFolderId });
-    item.drivePdfUrl = drive.webViewLink || `https://drive.google.com/file/d/${drive.id}/view?usp=drive_link`;
-    rmSync(localPath, { force: true });
+    try {
+      await downloadBinary(pdf.url, localPath, headers, { expectedKind: 'pdf' });
+      const fileName = `서재형 투자학교 여름학기 ${pdfOrdinal || '다음'} 기업분석도감.pdf`;
+      const drive = await uploadToDrive(localPath, fileName, 'application/pdf', {
+        folderId: pdfGdriveFolderId,
+        dedupeKey: driveMediaDedupeKey(item, 'pdf'),
+      });
+      item.drivePdfUrl = drive.webViewLink || `https://drive.google.com/file/d/${drive.id}/view?usp=drive_link`;
+    } finally {
+      rmSync(localPath, { force: true });
+    }
   }
 }
 
@@ -2382,11 +2427,20 @@ async function browserHeaders(cdp, referer) {
   };
 }
 
-async function downloadBinary(url, outputPath, headers) {
+async function downloadBinary(url, outputPath, headers, { expectedKind } = {}) {
   const response = await fetch(url, { headers });
   if (!response.ok) throw new Error(`Media download failed: HTTP ${response.status} ${url}`);
   const buffer = Buffer.from(await response.arrayBuffer());
+  if (expectedKind === 'pdf' && !isPdfBuffer(buffer)) {
+    const contentType = response.headers.get('content-type') || 'unknown';
+    throw new Error(`PDF download returned non-PDF content: ${contentType} ${url}`);
+  }
   writeFileSync(outputPath, buffer);
+}
+
+export function isPdfBuffer(buffer) {
+  if (!Buffer.isBuffer(buffer) || buffer.length === 0) return false;
+  return buffer.subarray(0, Math.min(buffer.length, 1024)).indexOf('%PDF-') >= 0;
 }
 
 async function downloadHls(url, outputPath, headers) {
@@ -2430,10 +2484,22 @@ function chooseVariant(playlist, playlistUrl) {
   return best?.url || null;
 }
 
-async function uploadToDrive(filePath, fileName, mimeType, { folderId = gdriveFolderId } = {}) {
+async function uploadToDrive(filePath, fileName, mimeType, { folderId = gdriveFolderId, dedupeKey = '' } = {}) {
   const accessToken = await getGoogleAccessToken();
+  const existingFile = await findExistingDriveFile(accessToken, {
+    fileName,
+    mimeType,
+    folderId,
+    dedupeKey,
+  });
+  if (existingFile) {
+    console.log(`Reusing existing Google Drive file: ${fileName} (${existingFile.id})`);
+    return existingFile;
+  }
+
   const metadata = { name: fileName };
   if (folderId) metadata.parents = [folderId];
+  if (dedupeKey) metadata.appProperties = { stockStudyKey: dedupeKey };
 
   const boundary = `stock-study-${Date.now()}`;
   const fileBuffer = readFileSync(filePath);
@@ -2465,6 +2531,63 @@ async function uploadToDrive(filePath, fileName, mimeType, { folderId = gdriveFo
     body: JSON.stringify({ type: 'anyone', role: 'reader' }),
   });
   return file;
+}
+
+async function findExistingDriveFile(accessToken, { fileName, mimeType, folderId, dedupeKey }) {
+  const queries = driveFileLookupQueries({ fileName, mimeType, folderId, dedupeKey });
+  for (const q of queries) {
+    const params = new URLSearchParams({
+      q,
+      spaces: 'drive',
+      pageSize: '1',
+      orderBy: 'createdTime desc',
+      fields: 'files(id,webViewLink,name,mimeType,appProperties,createdTime)',
+      supportsAllDrives: 'true',
+      includeItemsFromAllDrives: 'true',
+    });
+    const response = await fetch(`https://www.googleapis.com/drive/v3/files?${params}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.ok) {
+      throw new Error(`Google Drive duplicate lookup failed: HTTP ${response.status} ${await response.text()}`);
+    }
+    const result = await response.json();
+    if (result.files?.[0]) return result.files[0];
+  }
+  return null;
+}
+
+export function driveFileLookupQueries({ fileName, mimeType, folderId, dedupeKey }) {
+  const base = ['trashed = false'];
+  if (folderId) base.push(`'${escapeDriveQueryValue(folderId)}' in parents`);
+
+  const queries = [];
+  if (dedupeKey) {
+    queries.push([
+      ...base,
+      `appProperties has { key='stockStudyKey' and value='${escapeDriveQueryValue(dedupeKey)}' }`,
+    ].join(' and '));
+  }
+  queries.push([
+    ...base,
+    `name = '${escapeDriveQueryValue(fileName)}'`,
+    `mimeType = '${escapeDriveQueryValue(mimeType)}'`,
+  ].join(' and '));
+  return queries;
+}
+
+function escapeDriveQueryValue(value) {
+  return String(value || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+export function driveMediaDedupeKey(item, kind) {
+  const source = normalizeUrl(item?.sourceUrl || '');
+  if (!source || !kind) return '';
+  return createHash('sha256').update(`${source}\n${kind}`).digest('hex');
+}
+
+export function driveFolderForMediaKind(kind, { audioFolderId, videoFolderId }) {
+  return kind === 'video' ? videoFolderId : audioFolderId;
 }
 
 async function getGoogleAccessToken() {
