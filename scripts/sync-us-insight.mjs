@@ -205,10 +205,10 @@ async function main() {
     ensureDir(tempDir);
     const existingAnalysisPdfCount = countSummerAnalysisPdfPosts(posts);
     let pdfUploadIndex = 0;
-    for (const item of newItems) {
-      if (hasPdf(item)) pdfUploadIndex += 1;
+    const readyItems = await retainSuccessfulItems(newItems, async (item) => {
+      const pdfIndexForItem = pdfUploadIndex + (hasPdf(item) ? 1 : 0);
       await uploadDetectedMedia(item, cdp, {
-        pdfOrdinal: koreanOrdinalFromTitle(item.title) || koreanOrdinal(existingAnalysisPdfCount + pdfUploadIndex),
+        pdfOrdinal: koreanOrdinalFromTitle(item.title) || koreanOrdinal(existingAnalysisPdfCount + pdfIndexForItem),
         requiredKind: isGoodMorningEpisodeTitle(item.title) ? 'audio' : undefined,
       });
       if (isGoodMorningEpisodeTitle(item.title) && !item.driveAudioUrl) {
@@ -217,6 +217,14 @@ async function main() {
       if (isRegularClassRecordingTitle(item.title) && !item.driveVideoUrl) {
         throw new Error(`Regular class recording video was not detected: ${item.sourceUrl}`);
       }
+      if (hasPdf(item)) pdfUploadIndex += 1;
+    }, (item, error) => {
+      console.error(`Deferred post after media upload failure: ${item.sourceUrl || item.title}: ${error?.message || error}`);
+    });
+    newItems.splice(0, newItems.length, ...readyItems);
+    if (newItems.length === 0) {
+      console.warn('No new posts were imported because their required media uploads failed; they will be retried on the next sync.');
+      return;
     }
   }
 
@@ -270,6 +278,19 @@ async function main() {
   } finally {
     await closeBrowser(cdp, chromeChild);
   }
+}
+
+export async function retainSuccessfulItems(items, processItem, onError = () => {}) {
+  const successful = [];
+  for (const item of items) {
+    try {
+      await processItem(item);
+      successful.push(item);
+    } catch (error) {
+      onError(item, error);
+    }
+  }
+  return successful;
 }
 
 function printImportNotification(additions, { dryRun: isPreview = false } = {}) {
@@ -1116,13 +1137,44 @@ async function scrapeContent(cdp, url, fallbackTitle = '') {
   ensureDir(tempDir);
   const networkMedia = [];
   const downloadMedia = [];
+  const requestUrls = new Map();
+  const extraRequestHeaders = new Map();
+  const upsertNetworkMedia = (media, headers = {}) => {
+    if (!media) return;
+    const existing = networkMedia.find((item) => item.url === media.url);
+    const requestHeaders = sanitizeMediaRequestHeaders(existing?.requestHeaders, headers);
+    if (existing) {
+      existing.mimeType ||= media.mimeType;
+      existing.kind ||= media.kind;
+      if (Object.keys(requestHeaders).length > 0) existing.requestHeaders = requestHeaders;
+      return;
+    }
+    networkMedia.push(Object.keys(requestHeaders).length > 0 ? { ...media, requestHeaders } : media);
+  };
   const networkHandler = (event) => {
     const media = mediaFromUrl(event?.response?.url || '', event?.response?.mimeType || '');
-    if (media && !networkMedia.some((item) => item.url === media.url)) networkMedia.push(media);
+    upsertNetworkMedia(media, sanitizeMediaRequestHeaders(
+      event?.response?.requestHeaders,
+      extraRequestHeaders.get(event?.requestId),
+    ));
   };
   const requestHandler = (event) => {
-    const media = mediaFromUrl(event?.request?.url || '', '');
-    if (media && !networkMedia.some((item) => item.url === media.url)) networkMedia.push(media);
+    const requestId = event?.requestId;
+    const requestUrl = event?.request?.url || '';
+    if (requestId && requestUrl) requestUrls.set(requestId, requestUrl);
+    const media = mediaFromUrl(requestUrl, '');
+    upsertNetworkMedia(media, sanitizeMediaRequestHeaders(
+      event?.request?.headers,
+      extraRequestHeaders.get(requestId),
+    ));
+  };
+  const requestExtraInfoHandler = (event) => {
+    const requestId = event?.requestId;
+    if (!requestId) return;
+    const headers = sanitizeMediaRequestHeaders(event?.headers);
+    extraRequestHeaders.set(requestId, headers);
+    const requestUrl = requestUrls.get(requestId);
+    if (requestUrl) upsertNetworkMedia(mediaFromUrl(requestUrl, ''), headers);
   };
   const downloadHandler = (event) => {
     const url = event?.url || '';
@@ -1134,6 +1186,7 @@ async function scrapeContent(cdp, url, fallbackTitle = '') {
     if (media && !downloadMedia.some((item) => item.url === media.url)) downloadMedia.push(media);
   };
   cdp.on('Network.requestWillBeSent', requestHandler);
+  cdp.on('Network.requestWillBeSentExtraInfo', requestExtraInfoHandler);
   cdp.on('Network.responseReceived', networkHandler);
   cdp.on('Browser.downloadWillBegin', downloadHandler);
   await cdp.send('Browser.setDownloadBehavior', {
@@ -1579,6 +1632,7 @@ async function scrapeContent(cdp, url, fallbackTitle = '') {
 
   await delay(2000);
   cdp.off('Network.requestWillBeSent', requestHandler);
+  cdp.off('Network.requestWillBeSentExtraInfo', requestExtraInfoHandler);
   cdp.off('Network.responseReceived', networkHandler);
   cdp.off('Browser.downloadWillBegin', downloadHandler);
 
@@ -2277,13 +2331,66 @@ export function mediaFromUrl(url, mimeType) {
   return null;
 }
 
-function dedupeMedia(media) {
-  const seen = new Set();
-  return media.filter((item) => {
-    if (!item || seen.has(item.url)) return false;
-    seen.add(item.url);
-    return true;
-  });
+export function sanitizeMediaRequestHeaders(...sources) {
+  const allowedNames = new Set([
+    'accept',
+    'accept-language',
+    'authorization',
+    'cookie',
+    'origin',
+    'referer',
+    'sec-fetch-dest',
+    'sec-fetch-mode',
+    'sec-fetch-site',
+    'user-agent',
+  ]);
+  const headers = {};
+  for (const source of sources) {
+    for (const [rawName, rawValue] of Object.entries(source || {})) {
+      const name = String(rawName || '').trim().toLowerCase();
+      if (!allowedNames.has(name) && !name.startsWith('x-')) continue;
+      const value = Array.isArray(rawValue) ? rawValue.join(', ') : String(rawValue || '').trim();
+      if (value) headers[name] = value;
+    }
+  }
+  return headers;
+}
+
+export function redactSensitiveMediaUrl(value) {
+  try {
+    const url = new URL(String(value || ''));
+    for (const name of [...url.searchParams.keys()]) {
+      if (/(?:signature|credential|security-token|key-pair-id|policy|token|authorization|expires)/i.test(name)) {
+        url.searchParams.set(name, '[redacted]');
+      }
+    }
+    return url.href;
+  } catch {
+    return String(value || '').replace(
+      /([?&](?:[^=&]*(?:signature|credential|security-token|key-pair-id|policy|token|authorization|expires)[^=&]*)=)[^&#]*/gi,
+      '$1[redacted]',
+    );
+  }
+}
+
+export function dedupeMedia(media) {
+  const byUrl = new Map();
+  for (const item of media) {
+    if (!item?.url) continue;
+    const existing = byUrl.get(item.url);
+    if (!existing) {
+      byUrl.set(item.url, { ...item });
+      continue;
+    }
+    const requestHeaders = sanitizeMediaRequestHeaders(existing.requestHeaders, item.requestHeaders);
+    byUrl.set(item.url, {
+      ...existing,
+      kind: existing.kind || item.kind,
+      mimeType: existing.mimeType || item.mimeType,
+      ...(Object.keys(requestHeaders).length > 0 ? { requestHeaders } : {}),
+    });
+  }
+  return [...byUrl.values()];
 }
 
 async function uploadDetectedMedia(item, cdp, { pdfOrdinal, uploadPdf = true, requiredKind } = {}) {
@@ -2291,21 +2398,21 @@ async function uploadDetectedMedia(item, cdp, { pdfOrdinal, uploadPdf = true, re
   const pdf = uploadPdf ? item.media.find((entry) => entry.kind === 'pdf') : null;
   if (!media && !pdf) return;
 
-  const headers = await browserHeaders(cdp, item.sourceUrl);
-
   if (media) {
-    console.log(`Downloading media for upload: ${media.url}`);
+    console.log(`Downloading media for upload: ${redactSensitiveMediaUrl(media.url)}`);
     const extension = extensionForMedia(media);
     const localPath = resolve(tempDir, `${sanitizeFilename(item.title).slice(0, 80) || 'media'}-${Date.now()}${extension}`);
     const mimeType = isHlsMedia(media)
       ? 'video/mp2t'
       : media.mimeType || guessMimeType(localPath) || 'application/octet-stream';
+    const headers = await browserHeaders(cdp, item.sourceUrl, media.url, media.requestHeaders);
+    const refreshHeaders = () => refreshBrowserMediaHeaders(cdp, item.sourceUrl, media.url);
 
     try {
       if (isHlsMedia(media)) {
-        await downloadHls(media.url, localPath, headers);
+        await downloadHls(media.url, localPath, headers, { refreshHeaders });
       } else {
-        await downloadBinary(media.url, localPath, headers);
+        await downloadBinary(media.url, localPath, headers, { refreshHeaders });
       }
 
       const drive = await uploadToDrive(localPath, `${sanitizeFilename(item.title)}${extension}`, mimeType, {
@@ -2323,10 +2430,12 @@ async function uploadDetectedMedia(item, cdp, { pdfOrdinal, uploadPdf = true, re
   }
 
   if (pdf) {
-    console.log(`Downloading PDF for upload: ${pdf.url}`);
+    console.log(`Downloading PDF for upload: ${redactSensitiveMediaUrl(pdf.url)}`);
     const localPath = resolve(tempDir, `${sanitizeFilename(item.title).slice(0, 80) || 'analysis'}-${Date.now()}.pdf`);
+    const headers = await browserHeaders(cdp, item.sourceUrl, pdf.url, pdf.requestHeaders);
+    const refreshHeaders = () => refreshBrowserMediaHeaders(cdp, item.sourceUrl, pdf.url);
     try {
-      await downloadBinary(pdf.url, localPath, headers, { expectedKind: 'pdf' });
+      await downloadBinary(pdf.url, localPath, headers, { expectedKind: 'pdf', refreshHeaders });
       const fileName = `서재형 투자학교 여름학기 ${pdfOrdinal || '다음'} 기업분석도감.pdf`;
       const drive = await uploadToDrive(localPath, fileName, 'application/pdf', {
         folderId: pdfGdriveFolderId,
@@ -2399,14 +2508,15 @@ async function probeExistingPostMedia({ cdp, posts, ids }) {
 
     const extension = extensionForMedia(media);
     const localPath = resolve(tempDir, `probe-${id}-${Date.now()}${extension}`);
-    const headers = await browserHeaders(cdp, post.sourceUrl);
-    console.log(`Downloading probe video: ${media.url}`);
+    const headers = await browserHeaders(cdp, post.sourceUrl, media.url, media.requestHeaders);
+    const refreshHeaders = () => refreshBrowserMediaHeaders(cdp, post.sourceUrl, media.url);
+    console.log(`Downloading probe video: ${redactSensitiveMediaUrl(media.url)}`);
 
     try {
       if (isHlsMedia(media)) {
-        await downloadHls(media.url, localPath, headers);
+        await downloadHls(media.url, localPath, headers, { refreshHeaders });
       } else {
-        await downloadBinary(media.url, localPath, headers);
+        await downloadBinary(media.url, localPath, headers, { refreshHeaders });
       }
       const bytes = statSync(localPath).size;
       if (bytes === 0) throw new Error(`Downloaded video for post ${id} was empty.`);
@@ -2417,23 +2527,88 @@ async function probeExistingPostMedia({ cdp, posts, ids }) {
   }
 }
 
-async function browserHeaders(cdp, referer) {
-  const cookiesResult = await cdp.send('Network.getAllCookies').catch(() => ({ cookies: [] }));
+async function browserHeaders(cdp, referer, targetUrl = '', observedHeaders = {}) {
+  const cookiesResult = targetUrl
+    ? await cdp.send('Network.getCookies', { urls: [targetUrl] }).catch(() => ({ cookies: [] }))
+    : await cdp.send('Network.getAllCookies').catch(() => ({ cookies: [] }));
   const userAgent = await evaluate(cdp, () => navigator.userAgent);
-  return {
+  return sanitizeMediaRequestHeaders({
     Cookie: cookiesResult.cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; '),
     Referer: referer,
     'User-Agent': userAgent,
-  };
+  }, observedHeaders);
 }
 
-async function downloadBinary(url, outputPath, headers, { expectedKind } = {}) {
-  const response = await fetch(url, { headers });
-  if (!response.ok) throw new Error(`Media download failed: HTTP ${response.status} ${url}`);
+async function refreshBrowserMediaHeaders(cdp, referer, targetUrl) {
+  const matchingRequestIds = new Set();
+  const pendingExtraHeaders = new Map();
+  let observedHeaders = {};
+  const matchesTarget = (requestUrl) => {
+    try {
+      const request = new URL(requestUrl);
+      const target = new URL(targetUrl);
+      return request.origin === target.origin && request.pathname === target.pathname;
+    } catch {
+      return requestUrl === targetUrl;
+    }
+  };
+  const requestHandler = (event) => {
+    const requestId = event?.requestId;
+    if (!requestId || !matchesTarget(event?.request?.url || '')) return;
+    matchingRequestIds.add(requestId);
+    observedHeaders = sanitizeMediaRequestHeaders(
+      observedHeaders,
+      event?.request?.headers,
+      pendingExtraHeaders.get(requestId),
+    );
+  };
+  const extraInfoHandler = (event) => {
+    const requestId = event?.requestId;
+    if (!requestId) return;
+    const headers = sanitizeMediaRequestHeaders(event?.headers);
+    pendingExtraHeaders.set(requestId, headers);
+    if (matchingRequestIds.has(requestId)) {
+      observedHeaders = sanitizeMediaRequestHeaders(observedHeaders, headers);
+    }
+  };
+
+  cdp.on('Network.requestWillBeSent', requestHandler);
+  cdp.on('Network.requestWillBeSentExtraInfo', extraInfoHandler);
+  try {
+    await cdp.send('Page.navigate', { url: referer });
+    await waitForPage(cdp);
+    await autoScroll(cdp);
+    await delay(1500);
+  } finally {
+    cdp.off('Network.requestWillBeSent', requestHandler);
+    cdp.off('Network.requestWillBeSentExtraInfo', extraInfoHandler);
+  }
+  return browserHeaders(cdp, referer, targetUrl, observedHeaders);
+}
+
+export async function fetchWithAuthRefresh(url, headers, {
+  fetchImpl = fetch,
+  refreshHeaders,
+} = {}) {
+  let activeHeaders = sanitizeMediaRequestHeaders(headers);
+  let response = await fetchImpl(url, { headers: activeHeaders });
+  let retried = false;
+  if ([401, 403].includes(response.status) && refreshHeaders) {
+    activeHeaders = sanitizeMediaRequestHeaders(await refreshHeaders());
+    response = await fetchImpl(url, { headers: activeHeaders });
+    retried = true;
+  }
+  return { response, headers: activeHeaders, retried };
+}
+
+async function downloadBinary(url, outputPath, headers, { expectedKind, refreshHeaders } = {}) {
+  const result = await fetchWithAuthRefresh(url, headers, { refreshHeaders });
+  const { response } = result;
+  if (!response.ok) throw new Error(`Media download failed: HTTP ${response.status} ${redactSensitiveMediaUrl(url)}`);
   const buffer = Buffer.from(await response.arrayBuffer());
   if (expectedKind === 'pdf' && !isPdfBuffer(buffer)) {
     const contentType = response.headers.get('content-type') || 'unknown';
-    throw new Error(`PDF download returned non-PDF content: ${contentType} ${url}`);
+    throw new Error(`PDF download returned non-PDF content: ${contentType} ${redactSensitiveMediaUrl(url)}`);
   }
   writeFileSync(outputPath, buffer);
 }
@@ -2443,16 +2618,24 @@ export function isPdfBuffer(buffer) {
   return buffer.subarray(0, Math.min(buffer.length, 1024)).indexOf('%PDF-') >= 0;
 }
 
-async function downloadHls(url, outputPath, headers) {
-  const firstResponse = await fetch(url, { headers });
-  if (!firstResponse.ok) throw new Error(`HLS playlist download failed: HTTP ${firstResponse.status} ${url}`);
+async function downloadHls(url, outputPath, headers, { refreshHeaders } = {}) {
+  let activeHeaders = sanitizeMediaRequestHeaders(headers);
+  const fetchHlsResource = async (resourceUrl) => {
+    const result = await fetchWithAuthRefresh(resourceUrl, activeHeaders, { refreshHeaders });
+    activeHeaders = result.headers;
+    if (result.retried) console.warn('Refreshed browser media authorization after an HTTP authorization failure.');
+    return result.response;
+  };
+
+  const firstResponse = await fetchHlsResource(url);
+  if (!firstResponse.ok) throw new Error(`HLS playlist download failed: HTTP ${firstResponse.status} ${redactSensitiveMediaUrl(url)}`);
   let playlistUrl = url;
   let playlist = await firstResponse.text();
   const variant = chooseVariant(playlist, playlistUrl);
   if (variant) {
     playlistUrl = variant;
-    const variantResponse = await fetch(playlistUrl, { headers });
-    if (!variantResponse.ok) throw new Error(`HLS variant download failed: HTTP ${variantResponse.status} ${playlistUrl}`);
+    const variantResponse = await fetchHlsResource(playlistUrl);
+    if (!variantResponse.ok) throw new Error(`HLS variant download failed: HTTP ${variantResponse.status} ${redactSensitiveMediaUrl(playlistUrl)}`);
     playlist = await variantResponse.text();
   }
 
@@ -2464,8 +2647,8 @@ async function downloadHls(url, outputPath, headers) {
 
   writeFileSync(outputPath, Buffer.alloc(0));
   for (const segmentUrl of segmentUrls) {
-    const response = await fetch(segmentUrl, { headers });
-    if (!response.ok) throw new Error(`HLS segment download failed: HTTP ${response.status} ${segmentUrl}`);
+    const response = await fetchHlsResource(segmentUrl);
+    if (!response.ok) throw new Error(`HLS segment download failed: HTTP ${response.status} ${redactSensitiveMediaUrl(segmentUrl)}`);
     appendFileSync(outputPath, Buffer.from(await response.arrayBuffer()));
   }
 }
