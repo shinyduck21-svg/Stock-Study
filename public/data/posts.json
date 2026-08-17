@@ -1,5 +1,18 @@
 [
     {
+        "id": 489,
+        "title": "1117화. 🙋 8월18일 담쌤의 언제나 데이트",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_489.md",
+        "sourceUrl": "https://us-insight.com/secrets/29448"
+    },
+    {
         "id": 488,
         "title": "1화. [투자학교] 가을학기에 오신 급우님들, 환영합니다! 가을학기 학습 길라잡이를 전해드립니다.",
         "time": "방금 전",
@@ -24,19 +37,6 @@
         "isNew": true,
         "fileName": "briefing_487.md",
         "sourceUrl": "https://us-insight.com/secrets/29415"
-    },
-    {
-        "id": 484,
-        "title": "14화. [투자학교] 여름학기 <쓰담쓰담 총정리 라이브> 녹화본이 도착했습니다!",
-        "time": "방금 전",
-        "term": "26년 여름학기",
-        "type": "text",
-        "category": "언제나 데이트",
-        "likes": 0,
-        "isRead": false,
-        "isNew": true,
-        "fileName": "briefing_484.md",
-        "sourceUrl": "https://us-insight.com/secrets/29625"
     },
     {
         "id": 485,
@@ -77,19 +77,6 @@
         "isNew": true,
         "fileName": "briefing_483.md",
         "sourceUrl": "https://us-insight.com/secrets/29160"
-    },
-    {
-        "id": 482,
-        "title": "13화. [투자학교] 지금, 담쌤과 함께하는 쓰담쓰담 총정리 라이브에 입장해주세요!",
-        "time": "방금 전",
-        "term": "26년 여름학기",
-        "type": "text",
-        "category": "기업분석도감",
-        "likes": 0,
-        "isRead": false,
-        "isNew": true,
-        "fileName": "briefing_482.md",
-        "sourceUrl": "https://us-insight.com/secrets/29535"
     },
     {
         "id": 472,
@@ -143,6 +130,32 @@
         "isNew": true,
         "fileName": "briefing_475.md",
         "sourceUrl": "https://us-insight.com/secrets/29157"
+    },
+    {
+        "id": 484,
+        "title": "14화. [투자학교] 여름학기 <쓰담쓰담 총정리 라이브> 녹화본이 도착했습니다!",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_484.md",
+        "sourceUrl": "https://us-insight.com/secrets/29625"
+    },
+    {
+        "id": 482,
+        "title": "13화. [투자학교] 지금, 담쌤과 함께하는 쓰담쓰담 총정리 라이브에 입장해주세요!",
+        "time": "방금 전",
+        "term": "26년 여름학기",
+        "type": "text",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_482.md",
+        "sourceUrl": "https://us-insight.com/secrets/29535"
     },
     {
         "id": 476,
