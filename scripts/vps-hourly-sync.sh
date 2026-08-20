@@ -101,7 +101,8 @@ const newPosts = stagedDocs
   .filter(Boolean);
 
 const displayCount = newPosts.length || count;
-const lines = [`[담샘 여름학기] 새 글 ${displayCount}개가 올라왔습니다.`, ''];
+const postTerm = newPosts[0]?.term || '투자학교';
+const lines = [`[담샘 ${postTerm}] 새 글 ${displayCount}개가 올라왔습니다.`, ''];
 
 if (newPosts.length === 0) {
   lines.push(`새 글 ${displayCount}개가 추가되었습니다.`);

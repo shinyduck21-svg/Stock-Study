@@ -549,8 +549,9 @@ const App = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const audienceGroup = urlParams.get('group') || 'all';
   const summerTerm = '26년 여름학기';
+  const autumnTerm = '26년 가을학기';
   const isSummerOnlyGroup = audienceGroup === 'summer';
-  const defaultTerm = summerTerm;
+  const defaultTerm = isSummerOnlyGroup ? summerTerm : autumnTerm;
   const [activeTerm, setActiveTerm] = useState(defaultTerm);
   const [activeCategory, setActiveCategory] = useState('all');
   const [selectedPost, setSelectedPost] = useState(null);
@@ -617,7 +618,8 @@ const App = () => {
   const fullTerms = [
     { id: '개나리반', title: '개나리반', icon: <BookOpen size={20} />, categories: [] },
     { id: '26년 봄학기', title: '26년 봄학기', icon: <LayoutGrid size={20} />, categories: ['언제나 데이트', '굿모닝 담샘', '기업분석도감'] },
-    { id: '26년 여름학기', title: '26년 여름학기', icon: <LayoutGrid size={20} />, categories: ['입학길라잡이', '언제나 데이트', '굿모닝 담샘', '기업분석도감'] }
+    { id: '26년 여름학기', title: '26년 여름학기', icon: <LayoutGrid size={20} />, categories: ['입학길라잡이', '언제나 데이트', '굿모닝 담샘', '기업분석도감'] },
+    { id: '26년 가을학기', title: '26년 가을학기', icon: <LayoutGrid size={20} />, categories: ['입학길라잡이', '언제나 데이트', '굿모닝 담샘', '기업분석도감'] }
   ];
   const terms = isSummerOnlyGroup ? fullTerms.filter(term => term.id === summerTerm) : fullTerms;
 

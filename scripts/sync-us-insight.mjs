@@ -12,13 +12,13 @@ const rootDir = resolve(__dirname, '..');
 
 const DEFAULT_SOURCE = 'https://us-insight.com/club/13/contents?type=all';
 const DEFAULT_CATEGORY = 'US Insight';
-const DEFAULT_TERM = '26년 여름학기';
+const DEFAULT_TERM = '26년 가을학기';
 const DEFAULT_PROFILE_DIR = resolve(rootDir, 'chrome_profile');
 const DEFAULT_PORT = 9222;
 const DEFAULT_SCAN_LIMIT = 15;
-const DEFAULT_GDRIVE_FOLDER_ID = '1v9H6SxCxIelFLW_nfDkOYjZFX3t_3nNC';
-const DEFAULT_VIDEO_GDRIVE_FOLDER_ID = '1y-84vBP6Rx9SqYyZ43LXAp8OfJVtZorx';
-const DEFAULT_PDF_GDRIVE_FOLDER_ID = '1EkXlDqs50uyvS-UHcOP9RtoiCY-7Yg1L';
+const DEFAULT_GDRIVE_FOLDER_ID = '14h9CFatynWom_plRucRvU-acZtmRChs3';
+const DEFAULT_VIDEO_GDRIVE_FOLDER_ID = '1K5bOUseefkshdeYHtsgvWkxjvM7fmXms';
+const DEFAULT_PDF_GDRIVE_FOLDER_ID = '12UeFTp37e1P6m1vxsVetfkZ1xQNqmavL';
 
 const args = parseArgs(process.argv.slice(2));
 const sourceUrl = args.source || DEFAULT_SOURCE;
@@ -237,7 +237,7 @@ async function main() {
       id,
       title: item.title,
       time: '방금 전',
-      term,
+      term: detectTerm(item, term),
       type: postType,
       category: classifyCategory(item, postType, category),
       likes: 0,
@@ -1650,17 +1650,10 @@ async function scrapeContent(cdp, url, fallbackTitle = '') {
 }
 
 async function activateRegularClassRecording(cdp, title) {
-  if (!isRegularClassRecordingTitle(title)) return [];
+  const hasTitleMatch = isRegularClassRecordingTitle(title);
 
-  const activation = await evaluate(cdp, () => {
+  const activation = await evaluate(cdp, (isTitleCandidate) => {
     const videos = Array.from(document.querySelectorAll('video'));
-    videos.forEach((video) => {
-      video.muted = true;
-      video.preload = 'auto';
-      video.play().catch(() => {});
-    });
-
-    const playPattern = /^(?:\uC7AC\uC0DD|play|play video)$/i;
     const playImages = Array.from(document.querySelectorAll('img'))
       .filter((image) => /(?:IC_play|play)/i.test(`${image.getAttribute('src') || ''} ${image.getAttribute('alt') || ''}`))
       .map((image) => {
@@ -1672,6 +1665,8 @@ async function activateRegularClassRecording(cdp, title) {
         };
       })
       .filter((item) => item.rect.width > 0 && item.rect.height > 0);
+
+    const playPattern = /^(?:\uC7AC\uC0DD|play|play video)$/i;
     const candidates = Array.from(document.querySelectorAll('button, [role="button"], [aria-label], [title]'))
       .map((node) => {
         const rect = node.getBoundingClientRect();
@@ -1686,8 +1681,19 @@ async function activateRegularClassRecording(cdp, title) {
       .filter((item) => item.visible && playPattern.test(item.label))
       .sort((a, b) => (a.rect.width * a.rect.height) - (b.rect.width * b.rect.height));
 
+    if (!isTitleCandidate && videos.length === 0 && playImages.length === 0 && candidates.length === 0) {
+      return { skipped: true };
+    }
+
+    videos.forEach((video) => {
+      video.muted = true;
+      video.preload = 'auto';
+      video.play().catch(() => {});
+    });
+
     candidates[0]?.node.click();
     return {
+      skipped: false,
       videoCount: videos.length,
       clicked: candidates[0]?.label || '',
       playImages,
@@ -1702,10 +1708,12 @@ async function activateRegularClassRecording(cdp, title) {
         })(),
       })),
     };
-  });
+  }, hasTitleMatch);
 
-  const visibleVideo = activation.videos.find((video) => video.rect.width > 0 && video.rect.height > 0);
-  const clickTarget = activation.playImages[0] || visibleVideo;
+  if (activation?.skipped) return [];
+
+  const visibleVideo = activation.videos?.find((video) => video.rect.width > 0 && video.rect.height > 0);
+  const clickTarget = activation.playImages?.[0] || visibleVideo;
   if (clickTarget) {
     const x = clickTarget.rect.x + clickTarget.rect.width / 2;
     const y = clickTarget.rect.y + clickTarget.rect.height / 2;
@@ -1715,8 +1723,8 @@ async function activateRegularClassRecording(cdp, title) {
 
   if (debug) {
     console.log(`Activated regular class recording player: videos=${activation.videoCount} control="${activation.clicked}"`);
-    activation.playImages.forEach((image) => console.log(`Play image: ${JSON.stringify(image)}`));
-    activation.videos.forEach((video) => console.log(`Video element: ${JSON.stringify(video)}`));
+    activation.playImages?.forEach((image) => console.log(`Play image: ${JSON.stringify(image)}`));
+    activation.videos?.forEach((video) => console.log(`Video element: ${JSON.stringify(video)}`));
   }
   await delay(4000);
   if (debug) {
@@ -1730,7 +1738,7 @@ async function activateRegularClassRecording(cdp, title) {
 }
 
 function isRegularClassRecordingTitle(title) {
-  return /\uC815\uADDC\s*\uC218\uC5C5\s*\uB179\uD654\uBCF8/.test(String(title || ''));
+  return /(?:\uC815\uADDC\s*\uC218\uC5C5|\uC0AC\uC804\s*\uD559\uC2B5|VOD|\uAC15\uC758|\uB179\uD654\uBCF8|\uD2B9\uAC15|\uC601\uC0C1)/i.test(String(title || ''));
 }
 
 function isGoodMorningEpisodeTitle(title) {
@@ -2232,19 +2240,28 @@ function detectType(item) {
   return 'text';
 }
 
-function classifyCategory(item, postType, fallbackCategory) {
-  const haystack = [
-    item.title,
-    item.sourceUrl,
-    item.markdown,
-    ...item.media.map((media) => `${media.kind}:${media.url}:${media.mimeType}`),
-  ].join('\n');
+function detectTerm(item, fallbackTerm = DEFAULT_TERM) {
+  const text = `${item?.title || ''} ${item?.sourceUrl || ''}`;
+  if (/가을학기|사전학습|26년\s*가을/i.test(text)) return '26년 가을학기';
+  if (/여름학기|26년\s*여름/i.test(text)) return '26년 여름학기';
+  if (/봄학기|26년\s*봄/i.test(text)) return '26년 봄학기';
+  return fallbackTerm || DEFAULT_TERM;
+}
 
-  if (postType === 'video' || hasPdf(item) || /\.pdf(\?|$)|pdf/i.test(haystack)) {
+function classifyCategory(item, postType, fallbackCategory) {
+  const title = String(item?.title || '');
+  if (/길라잡이|사전학습|입학|안내|통신문/i.test(title)) {
+    return '입학길라잡이';
+  }
+  if (postType === 'video' || hasPdf(item) || /기업분석도감|기업분석/i.test(title)) {
     return '기업분석도감';
   }
-  if (postType === 'audio') return '굿모닝 담샘';
-  if (postType === 'text') return '언제나 데이트';
+  if (postType === 'audio' || /굿모닝\s*담[\uc324\uc0d8]/i.test(title)) {
+    return '굿모닝 담샘';
+  }
+  if (postType === 'text' || /언제나\s*데이트/i.test(title)) {
+    return '언제나 데이트';
+  }
   return fallbackCategory || '언제나 데이트';
 }
 
