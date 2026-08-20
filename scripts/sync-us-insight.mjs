@@ -507,6 +507,7 @@ function parseIdList(value) {
   const ids = [];
   for (const part of String(value).split(',')) {
     const trimmed = part.trim();
+    if (!trimmed) continue;
     const range = trimmed.match(/^(\d+)-(\d+)$/);
     if (range) {
       const start = Number(range[1]);
@@ -515,7 +516,7 @@ function parseIdList(value) {
       continue;
     }
     const id = Number(trimmed);
-    if (Number.isFinite(id)) ids.push(id);
+    if (Number.isFinite(id) && id > 0) ids.push(id);
   }
   return [...new Set(ids)];
 }

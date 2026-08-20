@@ -27,8 +27,10 @@ dist-ssr
 credentials.json
 token.json
 chrome_profile/
+temp_media/
 temp_audio.mp3
 temp_video.mp4
 test_gdrive.py
+.sync-us-insight.lock
 
 auto_publisher.py
