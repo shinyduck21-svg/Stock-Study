@@ -482,7 +482,7 @@ async function updateExistingPosts({ cdp, posts, ids }) {
 
     if (item.title) post.title = item.title;
     post.time = '방금 전';
-    post.term = post.term || term;
+    post.term = detectTerm(item, post.term || term);
     const postType = detectType({
       ...item,
       driveAudioUrl: post.audioUrl,
