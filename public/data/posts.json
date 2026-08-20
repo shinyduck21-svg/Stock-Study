@@ -1,5 +1,45 @@
 [
     {
+        "id": 497,
+        "title": "4화. [투자학교] 지금, 가을학기 입학 준비 라이브에 참여해주세요!",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "text",
+        "category": "입학길라잡이",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_497.md",
+        "sourceUrl": "https://us-insight.com/secrets/29892"
+    },
+    {
+        "id": 498,
+        "title": "1121화. 🙋 8월 20일 담쌤의 언제나 데이트 | 7월의 악몽을 뒤로하고 풍성한 가을을 기다립니다",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_498.md",
+        "sourceUrl": "https://us-insight.com/secrets/29553"
+    },
+    {
+        "id": 499,
+        "title": "5화. [투자학교 사전학습] 3강 | 산업 및 학습기업 관계 이해 — 담쌤의 얼개 투자법",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "video",
+        "category": "입학길라잡이",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_499.md",
+        "sourceUrl": "https://us-insight.com/secrets/29899",
+        "url": "https://drive.google.com/file/d/1kykJXZ4uIiBE_h3N_cAUQ-M10Je9AQmt/preview"
+    },
+    {
         "id": 496,
         "title": "1120화. 🙋 8월 20일 담쌤의 언제나 데이트",
         "time": "방금 전",
