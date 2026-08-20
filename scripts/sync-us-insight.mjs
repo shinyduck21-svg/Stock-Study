@@ -472,12 +472,11 @@ async function updateExistingPosts({ cdp, posts, ids }) {
       repairedAudioIds.push(id);
     }
 
-    if (!dryRun && !skipMedia && isRegularClassRecordingTitle(item.title || post.title) && !post.url) {
-      await uploadDetectedMedia(item, cdp, { uploadPdf: false });
-      if (!item.driveVideoUrl) {
-        throw new Error(`Regular class recording video was not detected: ${post.sourceUrl}`);
+    if (!dryRun && !skipMedia && !post.url && (item.media.some((media) => media.kind === 'video') || isRegularClassRecordingTitle(item.title || post.title))) {
+      await uploadDetectedMedia(item, cdp, { uploadPdf: false, requiredKind: 'video' });
+      if (item.driveVideoUrl) {
+        post.url = item.driveVideoUrl;
       }
-      post.url = item.driveVideoUrl;
     }
 
     if (item.title) post.title = item.title;
