@@ -1,5 +1,33 @@
 [
     {
+        "id": 501,
+        "title": "8화. [투자학교] <가을학기 입학준비물 라이브> 녹화본이 도착했습니다!",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "video",
+        "category": "입학길라잡이",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_501.md",
+        "sourceUrl": "https://us-insight.com/secrets/30029",
+        "url": "https://drive.google.com/file/d/1Il17YgxbAxmMksOJRERyWpcMDCWErccM/preview"
+    },
+    {
+        "id": 502,
+        "title": "6화. [투자학교 사전학습] 4강 | 담쌤의 채권 투자법 — 은행 예금보다 단단한 복리의 성벽",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "video",
+        "category": "입학길라잡이",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_502.md",
+        "sourceUrl": "https://us-insight.com/secrets/29986",
+        "url": "https://drive.google.com/file/d/1sgtDgLEdAiUUmKKwkzcTwOpnpU0i_pvN/preview"
+    },
+    {
         "id": 500,
         "title": "1122화. 🙋 8월 21일 담쌤의 언제나 데이트",
         "time": "방금 전",
