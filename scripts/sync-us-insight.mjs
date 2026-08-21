@@ -2731,8 +2731,8 @@ async function uploadToDrive(filePath, fileName, mimeType, { folderId = gdriveFo
     throw new Error('Google Drive upload initiation did not return a Location header.');
   }
 
-  // 2단계: 16MB 청크 단위 스트림 업로드 (메모리 사용량 16MB 고정)
-  const chunkSize = 16 * 1024 * 1024;
+  // 2단계: 32MB 청크 단위 스트림 업로드 (RAM 12GB VPS 환경에 최적화)
+  const chunkSize = 32 * 1024 * 1024;
   let start = 0;
   let fileResult = null;
   const fd = openSync(filePath, 'r');
