@@ -1,6 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, readSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import readline from 'node:readline/promises';
@@ -2662,8 +2662,15 @@ async function downloadHls(url, outputPath, headers, { refreshHeaders } = {}) {
     .filter((line) => line && !line.startsWith('#'))
     .map((line) => new URL(line, playlistUrl).href);
 
+  console.log(`Downloading HLS media: ${segmentUrls.length} segments total...`);
   writeFileSync(outputPath, Buffer.alloc(0));
+  let index = 0;
   for (const segmentUrl of segmentUrls) {
+    index += 1;
+    if (index % 50 === 0 || index === segmentUrls.length) {
+      const pct = ((index / segmentUrls.length) * 100).toFixed(1);
+      console.log(`Downloading HLS segments: ${index}/${segmentUrls.length} (${pct}%)`);
+    }
     const response = await fetchHlsResource(segmentUrl);
     if (!response.ok) throw new Error(`HLS segment download failed: HTTP ${response.status} ${redactSensitiveMediaUrl(segmentUrl)}`);
     appendFileSync(outputPath, Buffer.from(await response.arrayBuffer()));
@@ -2697,32 +2704,81 @@ async function uploadToDrive(filePath, fileName, mimeType, { folderId = gdriveFo
     return existingFile;
   }
 
+  const stat = statSync(filePath);
+  const fileSize = stat.size;
   const metadata = { name: fileName };
   if (folderId) metadata.parents = [folderId];
   if (dedupeKey) metadata.appProperties = { stockStudyKey: dedupeKey };
 
-  const boundary = `stock-study-${Date.now()}`;
-  const fileBuffer = readFileSync(filePath);
-  const body = Buffer.concat([
-    Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`),
-    Buffer.from(`--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`),
-    fileBuffer,
-    Buffer.from(`\r\n--${boundary}--\r\n`),
-  ]);
-
-  const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {
+  // 1단계: Resumable Upload 세션 시작
+  const initResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,webViewLink', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      'Content-Type': `multipart/related; boundary=${boundary}`,
-      'Content-Length': String(body.length),
+      'Content-Type': 'application/json; charset=UTF-8',
+      'X-Upload-Content-Type': mimeType,
+      'X-Upload-Content-Length': String(fileSize),
     },
-    body,
+    body: JSON.stringify(metadata),
   });
-  if (!response.ok) throw new Error(`Google Drive upload failed: HTTP ${response.status} ${await response.text()}`);
-  const file = await response.json();
 
-  await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/permissions`, {
+  if (!initResponse.ok) {
+    throw new Error(`Google Drive upload initiation failed: HTTP ${initResponse.status} ${await initResponse.text()}`);
+  }
+
+  const uploadUrl = initResponse.headers.get('location');
+  if (!uploadUrl) {
+    throw new Error('Google Drive upload initiation did not return a Location header.');
+  }
+
+  // 2단계: 16MB 청크 단위 스트림 업로드 (메모리 사용량 16MB 고정)
+  const chunkSize = 16 * 1024 * 1024;
+  let start = 0;
+  let fileResult = null;
+  const fd = openSync(filePath, 'r');
+
+  try {
+    while (start < fileSize) {
+      const end = Math.min(start + chunkSize, fileSize);
+      const length = end - start;
+      const chunk = Buffer.alloc(length);
+      readSync(fd, chunk, 0, length, start);
+      const pct = ((end / fileSize) * 100).toFixed(1);
+      const mbCurrent = (end / (1024 * 1024)).toFixed(1);
+      const mbTotal = (fileSize / (1024 * 1024)).toFixed(1);
+      console.log(`Uploading to Google Drive: ${mbCurrent}MB / ${mbTotal}MB (${pct}%)`);
+
+      const chunkResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Length': String(length),
+          'Content-Range': `bytes ${start}-${end - 1}/${fileSize}`,
+        },
+        body: chunk,
+      });
+
+      if (end === fileSize) {
+        if (!chunkResponse.ok) {
+          throw new Error(`Google Drive final chunk upload failed: HTTP ${chunkResponse.status} ${await chunkResponse.text()}`);
+        }
+        fileResult = await chunkResponse.json();
+      } else {
+        if (chunkResponse.status !== 308) {
+          throw new Error(`Google Drive chunk upload failed: HTTP ${chunkResponse.status} ${await chunkResponse.text()}`);
+        }
+      }
+      start = end;
+    }
+  } finally {
+    closeSync(fd);
+  }
+
+  if (!fileResult?.id) {
+    throw new Error('Google Drive upload did not return a valid file ID.');
+  }
+
+  // 3단계: 전체 공개 읽기 권한 설정
+  await fetch(`https://www.googleapis.com/drive/v3/files/${fileResult.id}/permissions`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -2730,7 +2786,8 @@ async function uploadToDrive(filePath, fileName, mimeType, { folderId = gdriveFo
     },
     body: JSON.stringify({ type: 'anyone', role: 'reader' }),
   });
-  return file;
+
+  return fileResult;
 }
 
 async function findExistingDriveFile(accessToken, { fileName, mimeType, folderId, dedupeKey }) {
