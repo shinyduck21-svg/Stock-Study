@@ -1,5 +1,19 @@
 [
     {
+        "id": 504,
+        "title": "2화. [기업분석도감] 가을학기 첫번째 기업분석도감이 도착했습니다!",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "text",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_504.md",
+        "sourceUrl": "https://us-insight.com/secrets/30065",
+        "pdfUrl": "https://drive.google.com/file/d/1YPoDyZc5Fi6E2rtTNIOtyckh0UZysLaZ/view?usp=drivesdk"
+    },
+    {
         "id": 503,
         "title": "7화. [투자학교 사전학습] 5강 | 위기를 기회로 보는 방법 — 변동성을 이겨낸 시간들",
         "time": "방금 전",
