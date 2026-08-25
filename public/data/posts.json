@@ -1,5 +1,32 @@
 [
     {
+        "id": 508,
+        "title": "1123화. 🙋 8월26 일 담쌤의 언제나 데이트",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_508.md",
+        "sourceUrl": "https://us-insight.com/secrets/29555"
+    },
+    {
+        "id": 509,
+        "title": "582화. 🌞 8월 26일 수요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "audio",
+        "category": "굿모닝 담샘",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_509.md",
+        "sourceUrl": "https://us-insight.com/secrets/30097",
+        "audioUrl": "https://drive.google.com/file/d/1RTsDz9LCtfUgSHoh2l966c6IZEmhYN5k"
+    },
+    {
         "id": 507,
         "title": "11화. [정규수업 녹화본] 가을학기 1회차 정규수업 녹화본이 도착했습니다!",
         "time": "방금 전",
