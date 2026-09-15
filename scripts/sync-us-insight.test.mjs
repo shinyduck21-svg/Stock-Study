@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 
 import {
   dedupeMedia,
@@ -13,6 +14,14 @@ import {
   redactSensitiveMediaUrl,
   retainSuccessfulItems,
   sanitizeMediaRequestHeaders,
+  buildAudioVideoArgs,
+  shouldUploadMediaToDrive,
+  youtubeAudioDedupeKey,
+  youtubeAudioMetadata,
+  youtubeWatchUrl,
+  youtubeUploadChunkSize,
+  nextYoutubeUploadOffset,
+  buildSingleSourcePost,
 } from './sync-us-insight.mjs';
 
 test('ordinary external links are not classified as PDFs', () => {
@@ -141,4 +150,81 @@ test('one media failure does not block other new posts', async () => {
   }, (item) => failed.push(item.id));
   assert.deepEqual(successful.map((item) => item.id), [1, 3]);
   assert.deepEqual(failed, [2]);
+});
+
+test('YouTube audio uploads use a stable source-based dedupe key', () => {
+  const first = youtubeAudioDedupeKey({ sourceUrl: 'https://us-insight.com/secrets/27466/' });
+  const retry = youtubeAudioDedupeKey({ sourceUrl: 'https://us-insight.com/secrets/27466' });
+  const other = youtubeAudioDedupeKey({ sourceUrl: 'https://us-insight.com/secrets/27467' });
+  assert.equal(first, retry);
+  assert.notEqual(first, other);
+});
+
+test('YouTube audio metadata is unlisted and records its source dedupe key', () => {
+  const item = {
+    title: 'Good Morning audio',
+    sourceUrl: 'https://us-insight.com/secrets/27466',
+  };
+  const metadata = youtubeAudioMetadata(item);
+  assert.equal(metadata.snippet.title, 'Good Morning audio');
+  assert.equal(metadata.status.privacyStatus, 'unlisted');
+  assert.match(metadata.snippet.description, /stock-study-source:/);
+  assert.match(metadata.snippet.description, new RegExp(youtubeAudioDedupeKey(item)));
+});
+
+test('YouTube watch URLs are stored separately from audioUrl', () => {
+  assert.equal(youtubeWatchUrl('abc_123-Z'), 'https://www.youtube.com/watch?v=abc_123-Z');
+  assert.equal(youtubeWatchUrl(''), '');
+});
+
+test('audio skips Drive while video and PDF retain existing Drive uploads', () => {
+  assert.equal(shouldUploadMediaToDrive('audio'), false);
+  assert.equal(shouldUploadMediaToDrive('video'), true);
+  assert.equal(shouldUploadMediaToDrive('pdf'), true);
+});
+
+test('audio conversion produces a YouTube-compatible still-image MP4', () => {
+  const args = buildAudioVideoArgs('cover.png', 'episode.mp3', 'episode.mp4');
+  assert.deepEqual(args.slice(0, 6), ['-y', '-loop', '1', '-framerate', '1', '-i']);
+  assert.ok(args.includes('libx264'));
+  assert.ok(args.includes('aac'));
+  assert.ok(args.includes('yuv420p'));
+  assert.equal(args.at(-1), 'episode.mp4');
+});
+
+test('package exposes the isolated YouTube audio test command', () => {
+  const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(packageJson.scripts['test:youtube-audio'], 'node scripts/sync-us-insight.mjs --youtube-audio-test');
+});
+
+test('ordinary audio videos upload in one request', () => {
+  const fileSize = 35 * 1024 * 1024;
+  assert.ok(youtubeUploadChunkSize(fileSize) >= fileSize);
+});
+
+test('YouTube resumable uploads continue from the acknowledged Range', () => {
+  assert.equal(nextYoutubeUploadOffset('bytes=0-33554431', 64 * 1024 * 1024), 33554432);
+  assert.throws(
+    () => nextYoutubeUploadOffset('', 64 * 1024 * 1024),
+    /did not acknowledge/,
+  );
+});
+
+test('single-source audio imports store youtubeUrl without audioUrl', () => {
+  const post = buildSingleSourcePost({
+    item: {
+      title: '596화 굿모닝 담쌤',
+      sourceUrl: 'https://us-insight.com/secrets/31006',
+      media: [{ kind: 'audio', url: 'https://example.com/audio.m3u8' }],
+    },
+    posts: [{ id: 41 }],
+    youtubeUrl: 'https://www.youtube.com/watch?v=e1DDL-V-eQs',
+    fallbackTerm: '26년 가을학기',
+    fallbackCategory: 'US Insight',
+  });
+  assert.equal(post.id, 42);
+  assert.equal(post.type, 'audio');
+  assert.equal(post.youtubeUrl, 'https://www.youtube.com/watch?v=e1DDL-V-eQs');
+  assert.equal('audioUrl' in post, false);
+  assert.equal(post.fileName, 'briefing_42.md');
 });

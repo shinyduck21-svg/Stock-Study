@@ -45,10 +45,17 @@ const pdfGdriveFolderId = args.pdfGdriveFolderId || process.env.PDF_GDRIVE_FOLDE
 const publicBaseUrl = normalizePublicBaseUrl(args.publicBaseUrl || process.env.PUBLIC_SITE_URL || 'https://shinyduck21-svg.github.io/Stock-Study/');
 const updateIds = parseIdList(args.updateIds || args.updateId || '');
 const probeMediaIds = parseIdList(args.probeMediaIds || args.probeMediaId || '');
+const youtubeAudioTest = Boolean(args.youtubeAudioTest);
+const noUpload = Boolean(args.noUpload);
+const importSource = Boolean(args.importSource);
+const suppliedYoutubeUrl = String(args.youtubeUrl || '');
 
 const postsPath = resolve(rootDir, 'public/data/posts.json');
 const docsDir = resolve(rootDir, 'public/docs');
 const tempDir = resolve(rootDir, 'temp_media');
+const youtubeTokenPath = resolve(rootDir, args.youtubeToken || process.env.YOUTUBE_TOKEN_PATH || 'youtube-token.json');
+const youtubeRegistryPath = resolve(rootDir, args.youtubeRegistry || process.env.YOUTUBE_REGISTRY_PATH || 'youtube-upload-registry.json');
+const youtubeCoverPath = resolve(rootDir, args.youtubeCover || process.env.YOUTUBE_COVER_PATH || 'scripts/assets/youtube-audio-cover.png');
 const TRANSCRIPT_HEADING = '## \uC2A4\uD06C\uB9BD\uD2B8';
 
 const turndown = new TurndownService({
@@ -112,6 +119,49 @@ async function main() {
 
   const posts = readJson(postsPath);
 
+  if (importSource) {
+    if (!suppliedYoutubeUrl.match(/^https:\/\/(?:www\.)?youtube\.com\/watch\?v=[A-Za-z0-9_-]{6,}/)) {
+      throw new Error('--youtube-url must be a valid YouTube watch URL.');
+    }
+    const existing = posts.find((post) => normalizeUrl(post.sourceUrl) === normalizeUrl(sourceUrl));
+    if (existing) throw new Error(`A post already exists for ${sourceUrl} as id ${existing.id}.`);
+    const item = await scrapeContent(cdp, sourceUrl, 'Imported audio post');
+    if (!item.title || !item.markdown) throw new Error('The source did not return a title and Markdown body.');
+    if (!item.media.some((media) => media.kind === 'audio')) throw new Error('The source did not contain audio media.');
+    const post = buildSingleSourcePost({
+      item,
+      posts,
+      youtubeUrl: suppliedYoutubeUrl,
+      fallbackTerm: term,
+      fallbackCategory: category,
+    });
+    ensureDir(docsDir);
+    writeFileSync(resolve(docsDir, post.fileName), buildMarkdown(item), 'utf8');
+    writeFileSync(postsPath, `${JSON.stringify([post, ...posts], null, 4)}\n`, 'utf8');
+    console.log(`Imported single audio post #${post.id}: ${post.title}`);
+    console.log(`YouTube: ${post.youtubeUrl}`);
+    return;
+  }
+
+  if (youtubeAudioTest) {
+    const item = await scrapeContent(cdp, sourceUrl, 'YouTube audio test');
+    if (!item.media.some((media) => media.kind === 'audio')) {
+      throw new Error(`No audio media was detected at ${sourceUrl}`);
+    }
+    ensureDir(tempDir);
+    await uploadDetectedMedia(item, cdp, {
+      uploadPdf: false,
+      requiredKind: 'audio',
+      youtubeNoUpload: noUpload,
+    });
+    if (noUpload) {
+      console.log('YouTube audio test passed: download and MP4 conversion succeeded; upload was skipped.');
+    } else {
+      console.log(`YouTube audio test passed: ${item.youtubeUrl}`);
+    }
+    return;
+  }
+
   if (probeMediaIds.length > 0) {
     await probeExistingPostMedia({ cdp, posts, ids: probeMediaIds });
     return;
@@ -149,7 +199,7 @@ async function main() {
 
   if (!dryRun && !skipMedia) {
     const missingMorningAudioIds = posts
-      .filter((post) => post.sourceUrl && isGoodMorningEpisodeTitle(post.title) && !post.audioUrl)
+      .filter((post) => post.sourceUrl && isGoodMorningEpisodeTitle(post.title) && !post.audioUrl && !post.youtubeUrl)
       .map((post) => Number(post.id));
     if (missingMorningAudioIds.length > 0) {
       console.log(`Retrying missing Good Morning audio for posts: ${missingMorningAudioIds.join(', ')}`);
@@ -211,8 +261,8 @@ async function main() {
         pdfOrdinal: koreanOrdinalFromTitle(item.title) || koreanOrdinal(existingAnalysisPdfCount + pdfIndexForItem),
         requiredKind: isGoodMorningEpisodeTitle(item.title) ? 'audio' : undefined,
       });
-      if (isGoodMorningEpisodeTitle(item.title) && !item.driveAudioUrl) {
-        throw new Error(`Good Morning audio upload did not complete: ${item.sourceUrl}`);
+      if (isGoodMorningEpisodeTitle(item.title) && !item.youtubeUrl) {
+        throw new Error(`Good Morning YouTube audio upload did not complete: ${item.sourceUrl}`);
       }
       if (isRegularClassRecordingTitle(item.title) && !item.driveVideoUrl) {
         throw new Error(`Regular class recording video was not detected: ${item.sourceUrl}`);
@@ -248,6 +298,7 @@ async function main() {
     };
     if (item.driveVideoUrl) post.url = item.driveVideoUrl;
     if (item.driveAudioUrl) post.audioUrl = item.driveAudioUrl;
+    if (item.youtubeUrl) post.youtubeUrl = item.youtubeUrl;
     if (item.drivePdfUrl) post.pdfUrl = item.drivePdfUrl;
 
     return {
@@ -459,16 +510,16 @@ async function updateExistingPosts({ cdp, posts, ids }) {
       continue;
     }
 
-    if (!dryRun && !skipMedia && isGoodMorningEpisodeTitle(item.title || post.title) && !post.audioUrl) {
+    if (!dryRun && !skipMedia && isGoodMorningEpisodeTitle(item.title || post.title) && !post.audioUrl && !post.youtubeUrl) {
       if (!item.media.some((media) => media.kind === 'audio')) {
         console.warn(`Good Morning audio is still not ready for post ${id}; retrying on the next sync.`);
         continue;
       }
       await uploadDetectedMedia(item, cdp, { uploadPdf: false, requiredKind: 'audio' });
-      if (!item.driveAudioUrl) {
-        throw new Error(`Good Morning audio upload did not complete: ${post.sourceUrl}`);
+      if (!item.youtubeUrl) {
+        throw new Error(`Good Morning YouTube audio upload did not complete: ${post.sourceUrl}`);
       }
-      post.audioUrl = item.driveAudioUrl;
+      post.youtubeUrl = item.youtubeUrl;
       repairedAudioIds.push(id);
     }
 
@@ -486,6 +537,7 @@ async function updateExistingPosts({ cdp, posts, ids }) {
       ...item,
       driveAudioUrl: post.audioUrl,
       driveVideoUrl: post.url,
+      youtubeUrl: post.youtubeUrl,
     });
     post.type = postType;
     post.category = classifyCategory(item, postType, post.category);
@@ -2233,7 +2285,7 @@ function cleanupMarkdown(markdown) {
 
 function detectType(item) {
   if (item.driveVideoUrl) return 'video';
-  if (item.driveAudioUrl) return 'audio';
+  if (item.driveAudioUrl || item.youtubeUrl) return 'audio';
   const mediaText = item.media.map((media) => `${media.kind}:${media.url}`).join('\n');
   if (/\.(mp4|m3u8)(\?|$)|video/i.test(mediaText)) return 'video';
   if (/\.(mp3|m4a|aac|wav)(\?|$)|audio/i.test(mediaText)) return 'audio';
@@ -2410,7 +2462,7 @@ export function dedupeMedia(media) {
   return [...byUrl.values()];
 }
 
-async function uploadDetectedMedia(item, cdp, { pdfOrdinal, uploadPdf = true, requiredKind } = {}) {
+async function uploadDetectedMedia(item, cdp, { pdfOrdinal, uploadPdf = true, requiredKind, youtubeNoUpload = false } = {}) {
   const media = selectMediaForUpload(item, requiredKind);
   const pdf = uploadPdf ? item.media.find((entry) => entry.kind === 'pdf') : null;
   if (!media && !pdf) return;
@@ -2432,15 +2484,44 @@ async function uploadDetectedMedia(item, cdp, { pdfOrdinal, uploadPdf = true, re
         await downloadBinary(media.url, localPath, headers, { refreshHeaders });
       }
 
-      const drive = await uploadToDrive(localPath, `${sanitizeFilename(item.title)}${extension}`, mimeType, {
-        folderId: driveFolderForMediaKind(media.kind, {
-          audioFolderId: gdriveFolderId,
-          videoFolderId: videoGdriveFolderId,
-        }),
-        dedupeKey: driveMediaDedupeKey(item, media.kind),
-      });
-      if (media.kind === 'video') item.driveVideoUrl = `https://drive.google.com/file/d/${drive.id}/preview`;
-      if (media.kind === 'audio') item.driveAudioUrl = `https://drive.google.com/file/d/${drive.id}`;
+      if (!shouldUploadMediaToDrive(media.kind)) {
+        const dedupeKey = youtubeAudioDedupeKey(item);
+        const registry = youtubeNoUpload ? {} : readYoutubeRegistry();
+        let videoId = registry[dedupeKey];
+        if (videoId) {
+          console.log(`Reusing existing YouTube audio video: ${videoId}`);
+        } else {
+          if (!existsSync(youtubeCoverPath)) {
+            throw new Error(`YouTube audio cover was not found: ${youtubeCoverPath}`);
+          }
+          const videoPath = resolve(tempDir, `${sanitizeFilename(item.title).slice(0, 80) || 'audio'}-${Date.now()}-youtube.mp4`);
+          try {
+            await convertAudioToVideo(youtubeCoverPath, localPath, videoPath);
+            if (youtubeNoUpload) {
+              console.log(`YouTube upload skipped; converted MP4 size is ${(statSync(videoPath).size / 1024 / 1024).toFixed(1)} MB.`);
+            } else {
+              const uploaded = await uploadToYouTube(videoPath, youtubeAudioMetadata(item));
+              videoId = uploaded.id;
+              writeYoutubeRegistry({ ...registry, [dedupeKey]: videoId });
+              if (uploaded.status?.privacyStatus !== 'unlisted') {
+                console.warn(`YouTube returned privacyStatus=${uploaded.status?.privacyStatus || 'unknown'}; the API project may require a compliance audit.`);
+              }
+            }
+          } finally {
+            rmSync(videoPath, { force: true });
+          }
+        }
+        item.youtubeUrl = youtubeWatchUrl(videoId);
+      } else {
+        const drive = await uploadToDrive(localPath, `${sanitizeFilename(item.title)}${extension}`, mimeType, {
+          folderId: driveFolderForMediaKind(media.kind, {
+            audioFolderId: gdriveFolderId,
+            videoFolderId: videoGdriveFolderId,
+          }),
+          dedupeKey: driveMediaDedupeKey(item, media.kind),
+        });
+        item.driveVideoUrl = `https://drive.google.com/file/d/${drive.id}/preview`;
+      }
     } finally {
       rmSync(localPath, { force: true });
     }
@@ -2847,9 +2928,168 @@ export function driveFolderForMediaKind(kind, { audioFolderId, videoFolderId }) 
   return kind === 'video' ? videoFolderId : audioFolderId;
 }
 
-async function getGoogleAccessToken() {
-  const tokenPath = resolve(rootDir, 'token.json');
-  const token = readJson(tokenPath);
+export function buildSingleSourcePost({ item, posts, youtubeUrl, fallbackTerm, fallbackCategory }) {
+  const id = Math.max(0, ...posts.map((post) => Number(post.id) || 0)) + 1;
+  const fileName = `briefing_${id}.md`;
+  const typedItem = { ...item, youtubeUrl };
+  const postType = detectType(typedItem);
+  return {
+    id,
+    title: item.title,
+    time: '방금 전',
+    term: detectTerm(item, fallbackTerm),
+    type: postType,
+    category: classifyCategory(item, postType, fallbackCategory),
+    likes: 0,
+    isRead: false,
+    isNew: true,
+    fileName,
+    sourceUrl: item.sourceUrl,
+    youtubeUrl,
+  };
+}
+
+export function shouldUploadMediaToDrive(kind) {
+  return kind !== 'audio';
+}
+
+export function youtubeAudioDedupeKey(item) {
+  const source = normalizeUrl(item?.sourceUrl || '');
+  if (!source) return '';
+  return createHash('sha256').update(`${source}\nyoutube-audio`).digest('hex');
+}
+
+export function youtubeAudioMetadata(item) {
+  const dedupeKey = youtubeAudioDedupeKey(item);
+  return {
+    snippet: {
+      title: String(item?.title || 'Stock Study Audio Briefing').slice(0, 100),
+      description: `Stock Study audio briefing\n\nstock-study-source:${dedupeKey}`,
+      categoryId: '27',
+    },
+    status: {
+      privacyStatus: 'unlisted',
+      selfDeclaredMadeForKids: false,
+    },
+  };
+}
+
+export function youtubeWatchUrl(videoId) {
+  return videoId ? `https://www.youtube.com/watch?v=${videoId}` : '';
+}
+
+export function buildAudioVideoArgs(coverPath, audioPath, outputPath) {
+  return [
+    '-y', '-loop', '1', '-framerate', '1', '-i', coverPath, '-i', audioPath,
+    '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2',
+    '-c:v', 'libx264', '-preset', 'veryfast', '-tune', 'stillimage', '-r', '1',
+    '-c:a', 'aac', '-b:a', '128k', '-pix_fmt', 'yuv420p', '-shortest', '-movflags', '+faststart', outputPath,
+  ];
+}
+
+async function convertAudioToVideo(coverPath, audioPath, outputPath) {
+  await runProcess('ffmpeg', buildAudioVideoArgs(coverPath, audioPath, outputPath));
+  if (!existsSync(outputPath) || statSync(outputPath).size === 0) {
+    throw new Error('ffmpeg did not create a valid YouTube video.');
+  }
+}
+
+async function runProcess(command, commandArgs) {
+  await new Promise((resolvePromise, reject) => {
+    const child = spawn(command, commandArgs, { stdio: 'inherit' });
+    child.once('error', (error) => reject(new Error(`${command} could not start: ${error.message}`)));
+    child.once('exit', (code) => {
+      if (code === 0) resolvePromise();
+      else reject(new Error(`${command} exited with status ${code}`));
+    });
+  });
+}
+
+function readYoutubeRegistry() {
+  return existsSync(youtubeRegistryPath) ? readJson(youtubeRegistryPath) : {};
+}
+
+function writeYoutubeRegistry(registry) {
+  writeFileSync(youtubeRegistryPath, `${JSON.stringify(registry, null, 2)}\n`, 'utf8');
+}
+
+async function uploadToYouTube(filePath, metadata) {
+  const accessToken = await getGoogleAccessToken(youtubeTokenPath);
+  const fileSize = statSync(filePath).size;
+  const initResponse = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json; charset=UTF-8',
+      'X-Upload-Content-Length': String(fileSize),
+      'X-Upload-Content-Type': 'video/mp4',
+    },
+    body: JSON.stringify(metadata),
+  });
+  if (!initResponse.ok) {
+    throw new Error(`YouTube upload initiation failed: HTTP ${initResponse.status} ${await initResponse.text()}`);
+  }
+  const uploadUrl = initResponse.headers.get('location');
+  if (!uploadUrl) throw new Error('YouTube upload initiation did not return a Location header.');
+
+  const chunkSize = youtubeUploadChunkSize(fileSize);
+  const fd = openSync(filePath, 'r');
+  let start = 0;
+  let result = null;
+  try {
+    while (start < fileSize) {
+      const end = Math.min(start + chunkSize, fileSize);
+      const length = end - start;
+      const chunk = Buffer.alloc(length);
+      readSync(fd, chunk, 0, length, start);
+      console.log(`Uploading to YouTube: ${((end / fileSize) * 100).toFixed(1)}%`);
+      const response = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Length': String(length),
+          'Content-Type': 'video/mp4',
+          'Content-Range': `bytes ${start}-${end - 1}/${fileSize}`,
+        },
+        body: chunk,
+      });
+      if (end === fileSize) {
+        if (!response.ok) throw new Error(`YouTube final upload failed: HTTP ${response.status} ${await response.text()}`);
+        result = await response.json();
+      } else if (response.status !== 308) {
+        throw new Error(`YouTube chunk upload failed: HTTP ${response.status} ${await response.text()}`);
+      } else {
+        const acknowledgedOffset = nextYoutubeUploadOffset(response.headers.get('range'), end);
+        if (acknowledgedOffset <= start || acknowledgedOffset > end) {
+          throw new Error(`YouTube acknowledged an invalid upload range: ${response.headers.get('range') || 'missing'}`);
+        }
+        start = acknowledgedOffset;
+        continue;
+      }
+      start = end;
+    }
+  } finally {
+    closeSync(fd);
+  }
+  if (!result?.id) throw new Error('YouTube upload did not return a video ID.');
+  return result;
+}
+
+export function youtubeUploadChunkSize(fileSize) {
+  const maxChunkSize = 128 * 1024 * 1024;
+  return Math.min(fileSize, maxChunkSize);
+}
+
+export function nextYoutubeUploadOffset(rangeHeader, attemptedEnd) {
+  const match = String(rangeHeader || '').match(/(?:bytes=)?\d+-(\d+)$/i);
+  if (!match) {
+    throw new Error(`YouTube did not acknowledge the uploaded bytes through ${attemptedEnd - 1}.`);
+  }
+  return Number(match[1]) + 1;
+}
+
+async function getGoogleAccessToken(tokenFilePath = resolve(rootDir, 'token.json')) {
+  const token = readJson(tokenFilePath);
   const response = await fetch(token.token_uri || 'https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

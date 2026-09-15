@@ -45,6 +45,12 @@ const getDownloadUrl = (url) => {
   return url;
 };
 
+const getYouTubeEmbedUrl = (url) => {
+  if (!url) return '';
+  const match = String(url).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([A-Za-z0-9_-]{6,})/);
+  return match ? `https://www.youtube.com/embed/${match[1]}` : '';
+};
+
 const ALLOCATION_CATEGORY_ID = '담쌤 종목비율 계산기';
 const ALLOCATION_CATEGORY_HASH = '#calculator-damsam-allocation';
 
@@ -1450,6 +1456,26 @@ const App = () => {
                         title={`${selectedPost.title} (음성 브리핑)`}
                         category={selectedPost.category}
                       />
+                    </div>
+                  )}
+
+                  {selectedPost.youtubeUrl && (
+                    <div className="video-viewer animate-fade-in">
+                      <div className="premium-video-player-container glass-card">
+                        <iframe
+                          src={getYouTubeEmbedUrl(selectedPost.youtubeUrl)}
+                          title={`${selectedPost.title} YouTube audio`}
+                          frameBorder="0"
+                          style={{ width: '100%', height: '100%', borderRadius: '20px' }}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        ></iframe>
+                      </div>
+                      <div className="alternative-player-link">
+                        <a href={selectedPost.youtubeUrl} target="_blank" rel="noopener noreferrer">
+                          YouTube에서 열기
+                        </a>
+                      </div>
                     </div>
                   )}
 
