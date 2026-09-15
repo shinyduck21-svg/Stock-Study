@@ -25,7 +25,10 @@ dist-ssr
 
 # Local Automation Settings & Media
 credentials.json
+youtube-credentials.json
 token.json
+youtube-token.json
+youtube-upload-registry.json
 chrome_profile/
 temp_media/
 temp_audio.mp3
