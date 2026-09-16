@@ -1,5 +1,18 @@
 [
     {
+        "id": 546,
+        "title": "79화. [학급반장과 자율학습] 금리 발표를 앞두고, 함께 살펴보는 시장의 흐름",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_546.md",
+        "sourceUrl": "https://us-insight.com/secrets/31654"
+    },
+    {
         "id": 545,
         "title": "596화. 🌞 9월 16일 수요일 굿모닝 담쌤",
         "time": "방금 전",
@@ -25,6 +38,20 @@
         "isNew": true,
         "fileName": "briefing_544.md",
         "sourceUrl": "https://us-insight.com/secrets/30448"
+    },
+    {
+        "id": 547,
+        "title": "19화. [정규수업 녹화본] 가을학기 4회차 정규수업 녹화본이 도착했습니다!",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "video",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_547.md",
+        "sourceUrl": "https://us-insight.com/secrets/31585",
+        "youtubeUrl": "https://www.youtube.com/watch?v=sB6q3fyxMhA"
     },
     {
         "id": 540,
