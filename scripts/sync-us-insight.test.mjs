@@ -18,6 +18,11 @@ import {
   shouldUploadMediaToDrive,
   youtubeAudioDedupeKey,
   youtubeAudioMetadata,
+  youtubeMediaDedupeKey,
+  youtubeVideoMetadata,
+  buildVideoRemuxArgs,
+  validateProbedVideo,
+  assertMatchingVideoDuration,
   youtubeWatchUrl,
   youtubeUploadChunkSize,
   nextYoutubeUploadOffset,
@@ -177,9 +182,9 @@ test('YouTube watch URLs are stored separately from audioUrl', () => {
   assert.equal(youtubeWatchUrl(''), '');
 });
 
-test('audio skips Drive while video and PDF retain existing Drive uploads', () => {
+test('audio and video skip Drive while PDF retains its existing Drive upload', () => {
   assert.equal(shouldUploadMediaToDrive('audio'), false);
-  assert.equal(shouldUploadMediaToDrive('video'), true);
+  assert.equal(shouldUploadMediaToDrive('video'), false);
   assert.equal(shouldUploadMediaToDrive('pdf'), true);
 });
 
@@ -227,4 +232,51 @@ test('single-source audio imports store youtubeUrl without audioUrl', () => {
   assert.equal(post.youtubeUrl, 'https://www.youtube.com/watch?v=e1DDL-V-eQs');
   assert.equal('audioUrl' in post, false);
   assert.equal(post.fileName, 'briefing_42.md');
+});
+
+test('YouTube media dedupe keys separate audio and video from the same source', () => {
+  const item = { sourceUrl: 'https://us-insight.com/secrets/31006/' };
+  assert.equal(youtubeMediaDedupeKey(item, 'video'), youtubeMediaDedupeKey({ sourceUrl: item.sourceUrl.slice(0, -1) }, 'video'));
+  assert.notEqual(youtubeMediaDedupeKey(item, 'video'), youtubeMediaDedupeKey(item, 'audio'));
+});
+
+test('video metadata is uploaded as unlisted and contains the video dedupe key', () => {
+  const item = { title: 'Regular class recording', sourceUrl: 'https://us-insight.com/secrets/40000' };
+  const metadata = youtubeVideoMetadata(item);
+  assert.equal(metadata.status.privacyStatus, 'unlisted');
+  assert.match(metadata.snippet.description, new RegExp(youtubeMediaDedupeKey(item, 'video')));
+});
+
+test('video remux copies streams into a fast-start MP4 without re-encoding', () => {
+  const args = buildVideoRemuxArgs('source.ts', 'youtube.mp4');
+  assert.deepEqual(args.slice(0, 3), ['-y', '-i', 'source.ts']);
+  assert.ok(args.includes('copy'));
+  assert.ok(args.includes('+faststart'));
+  assert.equal(args.at(-1), 'youtube.mp4');
+  assert.equal(args.includes('libx264'), false);
+});
+
+test('remux validation requires a video stream and a positive duration', () => {
+  assert.deepEqual(validateProbedVideo({
+    format: { duration: '2078.4', size: '1073741825' },
+    streams: [{ codec_type: 'video', codec_name: 'h264' }, { codec_type: 'audio', codec_name: 'aac' }],
+  }), { durationSeconds: 2078.4, sizeBytes: 1073741825 });
+  assert.throws(
+    () => validateProbedVideo({ format: { duration: '2078.4' }, streams: [{ codec_type: 'audio' }] }),
+    /video stream/i,
+  );
+  assert.throws(
+    () => validateProbedVideo({ format: { duration: '0' }, streams: [{ codec_type: 'video' }] }),
+    /duration/i,
+  );
+});
+
+test('remux validation rejects a truncated output duration', () => {
+  assert.doesNotThrow(() => assertMatchingVideoDuration(2078.4, 2078.0));
+  assert.throws(() => assertMatchingVideoDuration(2078.4, 11), /duration mismatch/i);
+});
+
+test('package exposes the isolated YouTube video test command', () => {
+  const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(packageJson.scripts['test:youtube-video'], 'node scripts/sync-us-insight.mjs --youtube-video-test');
 });

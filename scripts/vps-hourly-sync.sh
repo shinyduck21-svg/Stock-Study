@@ -168,7 +168,7 @@ git pull --ff-only "${REMOTE}" "${BRANCH}"
 
 export CHROME_HEADLESS="${CHROME_HEADLESS:-1}"
 SYNC_OUTPUT_FILE="$(mktemp)"
-timeout --preserve-status 50m npm run sync:us-insight:new 2>&1 | tee "${SYNC_OUTPUT_FILE}"
+timeout --preserve-status 3h npm run sync:us-insight:new 2>&1 | tee "${SYNC_OUTPUT_FILE}"
 AUDIO_REPAIRED_IDS="$(sed -n 's/^AUDIO_REPAIRED_IDS=//p' "${SYNC_OUTPUT_FILE}" | tail -n 1)"
 
 if git diff --quiet -- public/data/posts.json public/docs; then

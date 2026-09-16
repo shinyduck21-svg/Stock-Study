@@ -46,6 +46,7 @@ const publicBaseUrl = normalizePublicBaseUrl(args.publicBaseUrl || process.env.P
 const updateIds = parseIdList(args.updateIds || args.updateId || '');
 const probeMediaIds = parseIdList(args.probeMediaIds || args.probeMediaId || '');
 const youtubeAudioTest = Boolean(args.youtubeAudioTest);
+const youtubeVideoTest = Boolean(args.youtubeVideoTest);
 const noUpload = Boolean(args.noUpload);
 const importSource = Boolean(args.importSource);
 const suppliedYoutubeUrl = String(args.youtubeUrl || '');
@@ -162,6 +163,25 @@ async function main() {
     return;
   }
 
+  if (youtubeVideoTest) {
+    const item = await scrapeContent(cdp, sourceUrl, 'YouTube video test');
+    if (!item.media.some((media) => media.kind === 'video')) {
+      throw new Error(`No video media was detected at ${sourceUrl}`);
+    }
+    ensureDir(tempDir);
+    await uploadDetectedMedia(item, cdp, {
+      uploadPdf: false,
+      requiredKind: 'video',
+      youtubeNoUpload: noUpload,
+    });
+    if (noUpload) {
+      console.log('YouTube video test passed: download, remux, and media validation succeeded; upload was skipped.');
+    } else {
+      console.log(`YouTube video test passed: ${item.youtubeUrl}`);
+    }
+    return;
+  }
+
   if (probeMediaIds.length > 0) {
     await probeExistingPostMedia({ cdp, posts, ids: probeMediaIds });
     return;
@@ -264,8 +284,8 @@ async function main() {
       if (isGoodMorningEpisodeTitle(item.title) && !item.youtubeUrl) {
         throw new Error(`Good Morning YouTube audio upload did not complete: ${item.sourceUrl}`);
       }
-      if (isRegularClassRecordingTitle(item.title) && !item.driveVideoUrl) {
-        throw new Error(`Regular class recording video was not detected: ${item.sourceUrl}`);
+      if (isRegularClassRecordingTitle(item.title) && !item.youtubeUrl) {
+        throw new Error(`Regular class recording YouTube upload did not complete: ${item.sourceUrl}`);
       }
       if (hasPdf(item)) pdfUploadIndex += 1;
     }, (item, error) => {
@@ -523,10 +543,10 @@ async function updateExistingPosts({ cdp, posts, ids }) {
       repairedAudioIds.push(id);
     }
 
-    if (!dryRun && !skipMedia && !post.url && (item.media.some((media) => media.kind === 'video') || isRegularClassRecordingTitle(item.title || post.title))) {
+    if (!dryRun && !skipMedia && !post.url && !post.youtubeUrl && (item.media.some((media) => media.kind === 'video') || isRegularClassRecordingTitle(item.title || post.title))) {
       await uploadDetectedMedia(item, cdp, { uploadPdf: false, requiredKind: 'video' });
-      if (item.driveVideoUrl) {
-        post.url = item.driveVideoUrl;
+      if (item.youtubeUrl) {
+        post.youtubeUrl = item.youtubeUrl;
       }
     }
 
@@ -2285,8 +2305,9 @@ function cleanupMarkdown(markdown) {
 
 function detectType(item) {
   if (item.driveVideoUrl) return 'video';
-  if (item.driveAudioUrl || item.youtubeUrl) return 'audio';
   const mediaText = item.media.map((media) => `${media.kind}:${media.url}`).join('\n');
+  if (item.youtubeUrl && /video/.test(mediaText)) return 'video';
+  if (item.driveAudioUrl || item.youtubeUrl) return 'audio';
   if (/\.(mp4|m3u8)(\?|$)|video/i.test(mediaText)) return 'video';
   if (/\.(mp3|m4a|aac|wav)(\?|$)|audio/i.test(mediaText)) return 'audio';
   return 'text';
@@ -2485,22 +2506,27 @@ async function uploadDetectedMedia(item, cdp, { pdfOrdinal, uploadPdf = true, re
       }
 
       if (!shouldUploadMediaToDrive(media.kind)) {
-        const dedupeKey = youtubeAudioDedupeKey(item);
+        const dedupeKey = youtubeMediaDedupeKey(item, media.kind);
         const registry = youtubeNoUpload ? {} : readYoutubeRegistry();
         let videoId = registry[dedupeKey];
         if (videoId) {
-          console.log(`Reusing existing YouTube audio video: ${videoId}`);
+          console.log(`Reusing existing YouTube ${media.kind} video: ${videoId}`);
         } else {
-          if (!existsSync(youtubeCoverPath)) {
+          if (media.kind === 'audio' && !existsSync(youtubeCoverPath)) {
             throw new Error(`YouTube audio cover was not found: ${youtubeCoverPath}`);
           }
-          const videoPath = resolve(tempDir, `${sanitizeFilename(item.title).slice(0, 80) || 'audio'}-${Date.now()}-youtube.mp4`);
+          const videoPath = resolve(tempDir, `${sanitizeFilename(item.title).slice(0, 80) || media.kind}-${Date.now()}-youtube.mp4`);
           try {
-            await convertAudioToVideo(youtubeCoverPath, localPath, videoPath);
-            if (youtubeNoUpload) {
-              console.log(`YouTube upload skipped; converted MP4 size is ${(statSync(videoPath).size / 1024 / 1024).toFixed(1)} MB.`);
+            if (media.kind === 'video') {
+              await remuxVideoForYouTube(localPath, videoPath);
             } else {
-              const uploaded = await uploadToYouTube(videoPath, youtubeAudioMetadata(item));
+              await convertAudioToVideo(youtubeCoverPath, localPath, videoPath);
+            }
+            if (youtubeNoUpload) {
+              console.log(`YouTube upload skipped; prepared MP4 size is ${(statSync(videoPath).size / 1024 / 1024).toFixed(1)} MB.`);
+            } else {
+              const metadata = media.kind === 'video' ? youtubeVideoMetadata(item) : youtubeAudioMetadata(item);
+              const uploaded = await uploadToYouTube(videoPath, metadata);
               videoId = uploaded.id;
               writeYoutubeRegistry({ ...registry, [dedupeKey]: videoId });
               if (uploaded.status?.privacyStatus !== 'unlisted') {
@@ -2950,21 +2976,33 @@ export function buildSingleSourcePost({ item, posts, youtubeUrl, fallbackTerm, f
 }
 
 export function shouldUploadMediaToDrive(kind) {
-  return kind !== 'audio';
+  return !['audio', 'video'].includes(kind);
 }
 
 export function youtubeAudioDedupeKey(item) {
+  return youtubeMediaDedupeKey(item, 'audio');
+}
+
+export function youtubeMediaDedupeKey(item, kind) {
   const source = normalizeUrl(item?.sourceUrl || '');
-  if (!source) return '';
-  return createHash('sha256').update(`${source}\nyoutube-audio`).digest('hex');
+  if (!source || !kind) return '';
+  return createHash('sha256').update(`${source}\nyoutube-${kind}`).digest('hex');
 }
 
 export function youtubeAudioMetadata(item) {
-  const dedupeKey = youtubeAudioDedupeKey(item);
+  return youtubeMediaMetadata(item, 'audio');
+}
+
+export function youtubeVideoMetadata(item) {
+  return youtubeMediaMetadata(item, 'video');
+}
+
+function youtubeMediaMetadata(item, kind) {
+  const dedupeKey = youtubeMediaDedupeKey(item, kind);
   return {
     snippet: {
       title: String(item?.title || 'Stock Study Audio Briefing').slice(0, 100),
-      description: `Stock Study audio briefing\n\nstock-study-source:${dedupeKey}`,
+      description: `Stock Study ${kind} briefing\n\nstock-study-source:${dedupeKey}`,
       categoryId: '27',
     },
     status: {
@@ -2987,10 +3025,68 @@ export function buildAudioVideoArgs(coverPath, audioPath, outputPath) {
   ];
 }
 
+export function buildVideoRemuxArgs(inputPath, outputPath) {
+  return [
+    '-y', '-i', inputPath,
+    '-map', '0:v:0', '-map', '0:a?',
+    '-c', 'copy', '-movflags', '+faststart', outputPath,
+  ];
+}
+
 async function convertAudioToVideo(coverPath, audioPath, outputPath) {
   await runProcess('ffmpeg', buildAudioVideoArgs(coverPath, audioPath, outputPath));
   if (!existsSync(outputPath) || statSync(outputPath).size === 0) {
     throw new Error('ffmpeg did not create a valid YouTube video.');
+  }
+}
+
+async function remuxVideoForYouTube(inputPath, outputPath) {
+  const source = probeVideoFile(inputPath);
+  await runProcess('ffmpeg', buildVideoRemuxArgs(inputPath, outputPath));
+  const output = probeVideoFile(outputPath);
+  assertMatchingVideoDuration(source.durationSeconds, output.durationSeconds);
+  console.log(`Validated YouTube video: ${(output.durationSeconds / 60).toFixed(1)} minutes, ${(output.sizeBytes / 1024 / 1024).toFixed(1)} MB.`);
+}
+
+function probeVideoFile(filePath) {
+  const probe = spawnSync('ffprobe', [
+    '-v', 'error',
+    '-show_entries', 'format=duration,size:stream=codec_type,codec_name',
+    '-of', 'json',
+    filePath,
+  ], { encoding: 'utf8' });
+  if (probe.error) throw new Error(`ffprobe could not start: ${probe.error.message}`);
+  if (probe.status !== 0) throw new Error(`ffprobe exited with status ${probe.status}: ${String(probe.stderr || '').trim()}`);
+
+  let payload;
+  try {
+    payload = JSON.parse(probe.stdout);
+  } catch (error) {
+    throw new Error(`ffprobe returned invalid JSON: ${error.message}`);
+  }
+  const validated = validateProbedVideo(payload);
+  return validated;
+}
+
+export function validateProbedVideo(payload) {
+  if (!payload?.streams?.some((stream) => stream.codec_type === 'video')) {
+    throw new Error('Remuxed YouTube file does not contain a video stream.');
+  }
+  const durationSeconds = Number(payload?.format?.duration);
+  if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+    throw new Error('Remuxed YouTube file has an invalid duration.');
+  }
+  const sizeBytes = Number(payload?.format?.size);
+  if (!Number.isFinite(sizeBytes) || sizeBytes <= 0) {
+    throw new Error('Remuxed YouTube file has an invalid size.');
+  }
+  return { durationSeconds, sizeBytes };
+}
+
+export function assertMatchingVideoDuration(sourceDurationSeconds, outputDurationSeconds, toleranceSeconds = 1) {
+  const difference = Math.abs(Number(sourceDurationSeconds) - Number(outputDurationSeconds));
+  if (!Number.isFinite(difference) || difference > toleranceSeconds) {
+    throw new Error(`Video duration mismatch after remux: source=${sourceDurationSeconds}s output=${outputDurationSeconds}s.`);
   }
 }
 
