@@ -1,5 +1,31 @@
 [
     {
+        "id": 562,
+        "title": "12화. [사전예습도감] 투자학교 일곱번째 사전예습도감이 도착했습니다!",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_562.md",
+        "sourceUrl": "https://us-insight.com/secrets/32688"
+    },
+    {
+        "id": 563,
+        "title": "1154화. 🙋 10월 3일 담쌤의 언제나 데이트",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_563.md",
+        "sourceUrl": "https://us-insight.com/secrets/32333"
+    },
+    {
         "id": 557,
         "title": "1153화. 🙋 10월2일 담쌤의 언제나 데이트",
         "time": "방금 전",
@@ -11,6 +37,20 @@
         "isNew": true,
         "fileName": "briefing_557.md",
         "sourceUrl": "https://us-insight.com/secrets/32112"
+    },
+    {
+        "id": 564,
+        "title": "613화. 🌞 10월 2일 금요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "video",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_564.md",
+        "sourceUrl": "https://us-insight.com/secrets/32633",
+        "youtubeUrl": "https://www.youtube.com/watch?v=za334BZV0X8"
     },
     {
         "id": 558,
@@ -63,6 +103,20 @@
         "isNew": true,
         "fileName": "briefing_561.md",
         "sourceUrl": "https://us-insight.com/secrets/32020"
+    },
+    {
+        "id": 565,
+        "title": "606화. 🌞 9월 30일 수요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "video",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_565.md",
+        "sourceUrl": "https://us-insight.com/secrets/31990",
+        "youtubeUrl": "https://www.youtube.com/watch?v=R7zqGfdmhRw"
     },
     {
         "id": 549,
