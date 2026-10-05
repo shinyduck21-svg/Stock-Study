@@ -30,7 +30,23 @@ import {
   nextYoutubeUploadOffset,
   buildSingleSourcePost,
   applyRepairedPdfUrl,
+  classifyLoginPage,
 } from './sync-us-insight.mjs';
+
+test('login label in a populated content list does not require reauthentication', () => {
+  assert.deepEqual(classifyLoginPage({
+    url: 'https://us-insight.com/club/13/contents',
+    loginText: true,
+    passwordInput: false,
+    contentLinkCount: 10,
+  }), { required: false, reason: 'none' });
+});
+
+test('sign-in URL and password form require reauthentication', () => {
+  assert.equal(classifyLoginPage({ url: 'https://us-insight.com/signin', contentLinkCount: 0 }).reason, 'sign-in URL');
+  assert.equal(classifyLoginPage({ url: 'https://us-insight.com/club/13/contents', passwordInput: true, contentLinkCount: 0 }).reason, 'password form');
+  assert.deepEqual(classifyLoginPage({}), { required: false, reason: 'none' });
+});
 
 test('PDF repair adds only the missing URL to the existing post', () => {
   const post = { id: 566, title: '기업분석도감', fileName: 'briefing_566.md', sourceUrl: 'https://us-insight.com/secrets/32424' };

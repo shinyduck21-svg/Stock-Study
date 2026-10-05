@@ -115,7 +115,9 @@ async function main() {
   await cdp.send('Network.enable');
   await waitForPage(cdp);
 
-  if (await isLoginPage(cdp)) {
+  const loginPage = await inspectLoginPage(cdp);
+  if (loginPage.required) {
+    console.error(`Login diagnostics: ${JSON.stringify(loginPage)}`);
     if (headless || !process.stdin.isTTY) {
       throw new Error('Naver login is required, but this run is non-interactive. Refresh chrome_profile on the VPS or run with CHROME_HEADLESS=0 and complete login manually.');
     }
@@ -887,13 +889,27 @@ async function waitForPage(cdp) {
   await delay(2500);
 }
 
-async function isLoginPage(cdp) {
-  const result = await evaluate(cdp, () => ({
-    url: location.href,
+export function classifyLoginPage({ url = '', loginText = false, passwordInput = false, contentLinkCount = 0 }) {
+  let reason = 'none';
+  if (/^https?:\/\/nid\.naver\.com\//i.test(url) || /\/(?:signin|login)\/?$/i.test(url)) {
+    reason = 'sign-in URL';
+  } else if (passwordInput) {
+    reason = 'password form';
+  } else if (loginText && contentLinkCount === 0) {
+    reason = 'login text without content links';
+  }
+  return { required: reason !== 'none', reason };
+}
+
+async function inspectLoginPage(cdp) {
+  const page = await evaluate(cdp, () => ({
+    url: location.origin + location.pathname,
     title: document.title,
-    text: document.body?.innerText?.slice(0, 2000) || '',
+    loginText: /네이버\s*로그인|NAVER\s*로그인|로그인/.test(document.body?.innerText?.slice(0, 2000) || ''),
+    passwordInput: Boolean(document.querySelector('input[type="password"]')),
+    contentLinkCount: document.querySelectorAll('a[href*="/secrets/"]').length,
   }));
-  return /nid\.naver\.com|login/i.test(result.url) || /네이버\s*로그인|NAVER\s*로그인|로그인/.test(result.text);
+  return { ...page, ...classifyLoginPage(page) };
 }
 
 async function promptEnter() {
