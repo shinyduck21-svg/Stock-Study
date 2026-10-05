@@ -10,6 +10,7 @@ LOG_FILE="${LOG_DIR}/vps-hourly-sync.log"
 CHROME_PROFILE_DIR="${ROOT_DIR}/chrome_profile"
 DISCORD_ENV_FILE="${DISCORD_ENV_FILE:-${HOME}/.config/stock-study/discord.env}"
 SYNC_OUTPUT_FILE=""
+LOCK_ACQUIRED=0
 
 if [[ -f "${DISCORD_ENV_FILE}" ]]; then
   set -a
@@ -44,7 +45,9 @@ notify_discord() {
 
 handle_exit() {
   local status=$?
-  cleanup_chrome
+  if [[ "${status}" -ne 0 && "${LOCK_ACQUIRED}" -eq 1 ]]; then
+    cleanup_chrome
+  fi
   if [[ -n "${SYNC_OUTPUT_FILE}" ]]; then
     rm -f "${SYNC_OUTPUT_FILE}"
   fi
@@ -58,9 +61,6 @@ mkdir -p "${LOG_DIR}"
 exec >> >(tee -a "${LOG_FILE}") 2>&1
 cd "${ROOT_DIR}"
 trap handle_exit EXIT
-
-echo "[$(date -Is)] starting US Insight sync"
-cleanup_chrome
 
 notify_telegram() {
   local message="$1"
@@ -150,6 +150,9 @@ if ! flock -n 9; then
   echo "[$(date -Is)] another sync is already running; exiting"
   exit 0
 fi
+LOCK_ACQUIRED=1
+echo "[$(date -Is)] starting US Insight sync"
+cleanup_chrome
 
 notify_discord "[STARTED] Stock-Study US Insight sync started at $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M KST')."
 

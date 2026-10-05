@@ -29,11 +29,14 @@ youtube-credentials.json
 token.json
 youtube-token.json
 youtube-upload-registry.json
+.sync-pending-sources.json
+.sync-pending-sources.json.tmp
 chrome_profile/
 temp_media/
 temp_audio.mp3
 temp_video.mp4
 test_gdrive.py
 .sync-us-insight.lock
+reports/
 
 auto_publisher.py

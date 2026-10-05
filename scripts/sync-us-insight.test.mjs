@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { EventEmitter } from 'node:events';
 import { readFileSync } from 'node:fs';
+import * as sync from './sync-us-insight.mjs';
 
 import {
   dedupeMedia,
@@ -27,7 +29,78 @@ import {
   youtubeUploadChunkSize,
   nextYoutubeUploadOffset,
   buildSingleSourcePost,
+  applyRepairedPdfUrl,
 } from './sync-us-insight.mjs';
+
+test('PDF repair adds only the missing URL to the existing post', () => {
+  const post = { id: 566, title: '기업분석도감', fileName: 'briefing_566.md', sourceUrl: 'https://us-insight.com/secrets/32424' };
+  const repaired = applyRepairedPdfUrl(post, 'https://drive.google.com/file/d/example/view');
+  assert.deepEqual(repaired, { ...post, pdfUrl: 'https://drive.google.com/file/d/example/view' });
+  assert.equal(post.pdfUrl, undefined);
+  assert.throws(() => applyRepairedPdfUrl(post, ''), /PDF URL/);
+});
+
+test('browser shutdown waits for Chrome to exit after Browser.close', async () => {
+  const chromeChild = new EventEmitter();
+  chromeChild.exitCode = null;
+  chromeChild.signalCode = null;
+  chromeChild.kill = () => assert.fail('Chrome was killed before it exited');
+  const cdp = {
+    async send(command) {
+      assert.equal(command, 'Browser.close');
+      setTimeout(() => {
+        chromeChild.exitCode = 0;
+        chromeChild.emit('exit', 0, null);
+      }, 10);
+    },
+  };
+
+  await sync.closeBrowser(cdp, chromeChild, { graceMs: 100 });
+});
+
+test('browser shutdown terminates Chrome if graceful close stalls', async () => {
+  const chromeChild = new EventEmitter();
+  chromeChild.exitCode = null;
+  chromeChild.signalCode = null;
+  let signal;
+  chromeChild.kill = (value) => {
+    signal = value;
+    chromeChild.signalCode = value;
+    chromeChild.emit('exit', null, value);
+  };
+  const cdp = { async send() {} };
+
+  await sync.closeBrowser(cdp, chromeChild, { graceMs: 10 });
+  assert.equal(signal, 'SIGTERM');
+});
+
+test('browser shutdown does not hang when Browser.close has no reply', { timeout: 200 }, async () => {
+  const chromeChild = new EventEmitter();
+  chromeChild.exitCode = null;
+  chromeChild.signalCode = null;
+  chromeChild.kill = () => assert.fail('Chrome had already exited');
+  const cdp = { send: () => new Promise(() => {}) };
+  setTimeout(() => {
+    chromeChild.exitCode = 0;
+    chromeChild.emit('exit', 0, null);
+  }, 20);
+
+  await sync.closeBrowser(cdp, chromeChild, { commandTimeoutMs: 30, graceMs: 100 });
+});
+
+test('browser shutdown closes the debugging socket after Chrome exits', async () => {
+  const chromeChild = new EventEmitter();
+  chromeChild.exitCode = 0;
+  chromeChild.signalCode = null;
+  let socketClosed = false;
+  const cdp = {
+    async send() {},
+    close() { socketClosed = true; },
+  };
+
+  await sync.closeBrowser(cdp, chromeChild);
+  assert.equal(socketClosed, true);
+});
 
 test('ordinary external links are not classified as PDFs', () => {
   assert.equal(mediaFromUrl('https://www.reuters.com/', ''), null);

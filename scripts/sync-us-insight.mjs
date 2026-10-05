@@ -5,6 +5,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import readline from 'node:readline/promises';
 import TurndownService from 'turndown';
+import { PendingSources, combineScanAndPendingLinks, parseSourceUrls, shouldUploadPdfForSource } from './sync-pending.mjs';
 
 const scriptPath = fileURLToPath(import.meta.url);
 const __dirname = dirname(scriptPath);
@@ -45,6 +46,9 @@ const pdfGdriveFolderId = args.pdfGdriveFolderId || process.env.PDF_GDRIVE_FOLDE
 const publicBaseUrl = normalizePublicBaseUrl(args.publicBaseUrl || process.env.PUBLIC_SITE_URL || 'https://shinyduck21-svg.github.io/Stock-Study/');
 const updateIds = parseIdList(args.updateIds || args.updateId || '');
 const probeMediaIds = parseIdList(args.probeMediaIds || args.probeMediaId || '');
+const repairPdfIds = parseIdList(args.repairPdfIds || '');
+const backfillSources = parseSourceUrls(args.backfillSources || '');
+const allowMissingPdfSources = new Set(parseSourceUrls(args.allowMissingPdfSources || ''));
 const youtubeAudioTest = Boolean(args.youtubeAudioTest);
 const youtubeVideoTest = Boolean(args.youtubeVideoTest);
 const noUpload = Boolean(args.noUpload);
@@ -57,6 +61,7 @@ const tempDir = resolve(rootDir, 'temp_media');
 const youtubeTokenPath = resolve(rootDir, args.youtubeToken || process.env.YOUTUBE_TOKEN_PATH || 'youtube-token.json');
 const youtubeRegistryPath = resolve(rootDir, args.youtubeRegistry || process.env.YOUTUBE_REGISTRY_PATH || 'youtube-upload-registry.json');
 const youtubeCoverPath = resolve(rootDir, args.youtubeCover || process.env.YOUTUBE_COVER_PATH || 'scripts/assets/youtube-audio-cover.png');
+const pendingSourcesPath = resolve(rootDir, process.env.SYNC_PENDING_SOURCES_PATH || '.sync-pending-sources.json');
 const TRANSCRIPT_HEADING = '## \uC2A4\uD06C\uB9BD\uD2B8';
 
 const turndown = new TurndownService({
@@ -85,6 +90,9 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve(scriptPath)) {
 }
 
 async function main() {
+  if (args.repairPdfIds && repairPdfIds.length === 0) {
+    throw new Error('--repair-pdf-ids requires at least one numeric post ID.');
+  }
   if ((!Number.isFinite(limit) && !allNew) || limit < 1) {
     throw new Error('--limit must be a positive number.');
   }
@@ -119,6 +127,11 @@ async function main() {
   }
 
   const posts = readJson(postsPath);
+
+  if (repairPdfIds.length > 0) {
+    await repairExistingPostPdfs({ cdp, posts, ids: repairPdfIds });
+    return;
+  }
 
   if (importSource) {
     if (!suppliedYoutubeUrl.match(/^https:\/\/(?:www\.)?youtube\.com\/watch\?v=[A-Za-z0-9_-]{6,}/)) {
@@ -215,7 +228,21 @@ async function main() {
 
   const existingSources = new Set(posts.map((post) => normalizeUrl(post.sourceUrl)).filter(Boolean));
   const existingTitles = new Set(posts.map((post) => normalizeTitle(post.title)).filter(Boolean));
-  const targetLinks = selectTargetLinks(links, existingSources);
+  const pendingSources = new PendingSources(pendingSourcesPath);
+  if (!dryRun) {
+    for (const url of backfillSources) pendingSources.add(url);
+    for (const url of pendingSources.list()) {
+      if (existingSources.has(normalizeUrl(url))) pendingSources.remove(url);
+    }
+  }
+  const targetLinks = combineScanAndPendingLinks(
+    selectTargetLinks(links, existingSources), [...pendingSources.list(), ...backfillSources], existingSources,
+  );
+  if (!dryRun) {
+    for (const link of targetLinks) {
+      if (!existingSources.has(normalizeUrl(link.url))) pendingSources.add(link.url);
+    }
+  }
 
   if (!dryRun && !skipMedia) {
     const missingMorningAudioIds = posts
@@ -240,13 +267,22 @@ async function main() {
     }
 
     console.log(`Reading: ${link.title || link.url}`);
-    const item = await scrapeContent(cdp, link.url, link.title);
+    let item;
+    try {
+      item = await scrapeContent(cdp, link.url, link.title);
+      item.sourceUrl ||= link.url;
+    } catch (error) {
+      if (!dryRun) pendingSources.add(link.url);
+      console.error(`Deferred post after scrape failure: ${link.url}: ${error?.message || error}`);
+      continue;
+    }
     if (debug) {
       console.log(`Scraped title="${item.title}" markdownLength=${item.markdown.length} media=${item.media.length}`);
       item.media.forEach((media) => console.log(`Detected ${media.kind} media: ${media.url}`));
       if (!item.markdown) console.log(`Text sample: ${item.text?.slice(0, 500) || ''}`);
     }
     if (!item.title || !item.markdown) {
+      if (!dryRun) pendingSources.add(link.url);
       console.warn(`Skipped because title/content was empty: ${link.url}`);
       continue;
     }
@@ -260,6 +296,7 @@ async function main() {
       console.log(`Detected media: ${item.media.map((media) => media.url).join(', ')}`);
     }
     if (isGoodMorningEpisodeTitle(item.title) && !item.media.some((media) => media.kind === 'audio')) {
+      if (!dryRun) pendingSources.add(link.url);
       console.warn(`Deferred Good Morning post because audio is not ready: ${item.sourceUrl}`);
       continue;
     }
@@ -276,9 +313,14 @@ async function main() {
     const existingAnalysisPdfCount = countSummerAnalysisPdfPosts(posts);
     let pdfUploadIndex = 0;
     const readyItems = await retainSuccessfulItems(newItems, async (item) => {
-      const pdfIndexForItem = pdfUploadIndex + (hasPdf(item) ? 1 : 0);
+      const uploadPdf = shouldUploadPdfForSource(item.sourceUrl, allowMissingPdfSources);
+      const pdfIndexForItem = pdfUploadIndex + (hasPdf(item) && uploadPdf ? 1 : 0);
+      if (hasPdf(item) && !uploadPdf) {
+        console.warn(`PDF upload intentionally deferred for ${item.sourceUrl}; the post will be imported without pdfUrl.`);
+      }
       await uploadDetectedMedia(item, cdp, {
         pdfOrdinal: koreanOrdinalFromTitle(item.title) || koreanOrdinal(existingAnalysisPdfCount + pdfIndexForItem),
+        uploadPdf,
         requiredKind: isGoodMorningEpisodeTitle(item.title) ? 'audio' : undefined,
       });
       if (isGoodMorningEpisodeTitle(item.title) && !item.youtubeUrl) {
@@ -287,8 +329,9 @@ async function main() {
       if (isRegularClassRecordingTitle(item.title) && !item.youtubeUrl) {
         throw new Error(`Regular class recording YouTube upload did not complete: ${item.sourceUrl}`);
       }
-      if (hasPdf(item)) pdfUploadIndex += 1;
+      if (hasPdf(item) && uploadPdf) pdfUploadIndex += 1;
     }, (item, error) => {
+      pendingSources.add(item.sourceUrl);
       console.error(`Deferred post after media upload failure: ${item.sourceUrl || item.title}: ${error?.message || error}`);
     });
     newItems.splice(0, newItems.length, ...readyItems);
@@ -343,6 +386,7 @@ async function main() {
 
   const nextPosts = mergePostsInScanOrder({ posts, additions, targetLinks });
   writeFileSync(postsPath, `${JSON.stringify(nextPosts, null, 4)}\n`, 'utf8');
+  for (const addition of additions) pendingSources.remove(addition.post.sourceUrl);
   console.log(`Imported ${additions.length} posts.`);
   additions.forEach(({ post }) => console.log(`- #${post.id} ${post.title}`));
   printImportNotification(additions);
@@ -683,26 +727,96 @@ function launchChrome({ port, profileDir, url, headless }) {
   return child;
 }
 
-async function closeBrowser(cdp, chromeChild) {
+export async function closeBrowser(cdp, chromeChild, { commandTimeoutMs = 2_000, graceMs = 10_000 } = {}) {
   if (cdp) {
+    let commandTimer;
     try {
-      await cdp.send('Browser.close');
+      await Promise.race([
+        cdp.send('Browser.close'),
+        new Promise((resolveTimeout) => {
+          commandTimer = setTimeout(resolveTimeout, commandTimeoutMs);
+        }),
+      ]);
     } catch {
-      try {
-        cdp.close();
-      } catch {
-        // Ignore cleanup errors; the original sync result is more important.
-      }
+      // Chrome may close the connection before replying.
+    } finally {
+      clearTimeout(commandTimer);
     }
   }
 
-  if (chromeChild && !chromeChild.killed) {
+  try {
+    if (!chromeChild || await waitForChromeExit(chromeChild, graceMs)) return;
     try {
-      chromeChild.kill();
+      chromeChild.kill('SIGTERM');
+      await waitForChromeExit(chromeChild, 5_000);
     } catch {
-      // Ignore cleanup errors; Chrome may have already exited.
+      // Chrome may have exited between the check and the signal.
+    }
+  } finally {
+    try {
+      cdp?.close();
+    } catch {
+      // Ignore cleanup errors; the original sync result is more important.
     }
   }
+}
+
+export function applyRepairedPdfUrl(post, pdfUrl) {
+  if (!pdfUrl) throw new Error('PDF URL is required to repair a post.');
+  return { ...post, pdfUrl };
+}
+
+async function repairExistingPostPdfs({ cdp, posts, ids }) {
+  if (skipMedia && !dryRun) throw new Error('--repair-pdf-ids cannot be combined with --skip-media.');
+  for (const id of ids) {
+    const index = posts.findIndex((post) => Number(post.id) === id);
+    if (index < 0 || !posts[index].sourceUrl) throw new Error(`PDF repair post ${id} was not found.`);
+    const post = posts[index];
+    if (post.pdfUrl) {
+      console.log(`PDF already linked for #${id}; skipping.`);
+      continue;
+    }
+    console.log(`Repairing PDF for #${id}: ${post.sourceUrl}`);
+    const item = await scrapeContent(cdp, post.sourceUrl, post.title);
+    if (!item.media.some((media) => media.kind === 'pdf')) {
+      throw new Error(`No PDF media was detected for post ${id}.`);
+    }
+    if (dryRun) {
+      console.log(`Dry run: PDF is available for post ${id}.`);
+      continue;
+    }
+    ensureDir(tempDir);
+    await uploadDetectedMedia(item, cdp, {
+      requiredKind: 'pdf',
+      pdfOrdinal: koreanOrdinalFromTitle(item.title),
+    });
+    posts[index] = applyRepairedPdfUrl(post, item.drivePdfUrl);
+    writeFileSync(postsPath, `${JSON.stringify(posts, null, 4)}\n`, 'utf8');
+    console.log(`Repaired PDF for #${id}: ${item.drivePdfUrl}`);
+  }
+}
+
+function waitForChromeExit(chromeChild, timeoutMs) {
+  if (chromeChild.exitCode !== null || chromeChild.signalCode !== null) {
+    return Promise.resolve(true);
+  }
+
+  return new Promise((resolveExit) => {
+    let settled = false;
+    const onExit = () => finish(true);
+    const timer = setTimeout(() => finish(false), timeoutMs);
+
+    function finish(exited) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      chromeChild.off('exit', onExit);
+      resolveExit(exited);
+    }
+
+    chromeChild.once('exit', onExit);
+    if (chromeChild.exitCode !== null || chromeChild.signalCode !== null) finish(true);
+  });
 }
 
 function findChrome() {

@@ -44,6 +44,30 @@ Chromium 또는 Chrome이 기본 경로가 아닌 곳에 설치되어 있다면 
 
 `credentials.json`, `token.json`, `chrome_profile/`은 의도적으로 git에 포함하지 않습니다. `scp`로 VPS에 복사하거나 서버에서 직접 생성하세요. Naver 세션이 만료되면 비공개 콘텐츠를 다시 가져올 수 없으므로 `chrome_profile/`을 갱신해야 합니다.
 
+### 로그인에 사용하는 Chrome 프로필 경로
+
+동기화 프로그램은 작업 디렉터리와 관계없이 `/home/ubuntu/Stock-Study/chrome_profile`을 사용합니다. 수동 로그인에도 **같은 절대 경로**를 지정해야 합니다. 특히 `~/Stock-Study/logs`에서 `--user-data-dir="$PWD/chrome_profile"`을 실행하면 `logs/chrome_profile`에 로그인하게 되어 동기화에는 적용되지 않습니다.
+
+cron 실행과 수동 로그인이 겹치지 않도록 로그인 중에는 해당 cron 항목을 잠시 비활성화합니다. VPS에서 화면을 띄울 수 있는 SSH/X11 세션을 사용하고, 기존 Chrome을 종료한 뒤 다음과 같이 실행합니다.
+
+```bash
+cd /home/ubuntu/Stock-Study
+CHROME_BIN="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser || command -v chromium)"
+XAUTHORITY="$HOME/.Xauthority" "$CHROME_BIN" \
+  --user-data-dir=/home/ubuntu/Stock-Study/chrome_profile \
+  --profile-directory=Default --disable-dev-shm-usage \
+  'https://us-insight.com/club/13/contents?type=all'
+```
+
+사이트에 로그인해 목록이 보이는지 확인하고 Chrome을 정상 종료합니다. 그런 다음 cron을 켜기 전에 같은 프로필을 사용하는 비대화형 실행으로 확인합니다.
+
+```bash
+cd /home/ubuntu/Stock-Study
+CHROME_HEADLESS=1 node scripts/sync-us-insight.mjs --since-last --dry-run --skip-media
+```
+
+여기에서도 로그인 화면이 나오면 Chrome 종료·프로필 저장 상태와 사이트 세션 만료를 확인해야 합니다. X11의 `No authorisation provided` 또는 `Missing X server or $DISPLAY` 오류는 로그인 상태가 아니라 화면 연결 문제입니다.
+
 GitHub push 권한은 SSH deploy key 또는 GitHub token을 사용하는 HTTPS remote로 설정하면 됩니다. cron을 켜기 전에 아래 명령으로 push 권한을 먼저 확인합니다.
 
 ```bash
@@ -128,6 +152,30 @@ TELEGRAM_CHAT_ID=chat_id
 저장소 경로가 다르면 `/home/ubuntu/Stock-Study`를 실제 경로로 바꿉니다. `7 * * * *`는 매시간 7분에 실행한다는 뜻입니다.
 
 ## 운영 참고사항
+
+### 누락 게시물 다시 가져오기
+
+동기화 중 오디오가 준비되지 않았거나 미디어 업로드가 실패한 원본 URL은 VPS의 `.sync-pending-sources.json`에 보관됩니다. 다음 실행에서는 원본 사이트의 최신 목록(현재 한 페이지에 약 10개)에서 사라져도 이 URL을 다시 시도합니다. 이 파일은 Git에 포함되지 않으므로 VPS 백업에 포함하세요. 성공적으로 등록된 URL과 이미 등록된 URL은 목록에서 제거됩니다.
+
+과거에 실패해 목록에서 이미 사라진 글은 최신 코드가 VPS에 반영된 뒤 수동으로 재시도 목록에 넣을 수 있습니다. cron 실행 시간과 겹치지 않게 아래 명령을 실행하세요. `--allow-missing-pdf-sources`는 지정한 원본 하나에만 PDF 업로드를 생략하며, 게시글에는 `pdfUrl`을 넣지 않습니다.
+
+```bash
+cd /home/ubuntu/Stock-Study
+flock -n .sync-us-insight.lock node scripts/sync-us-insight.mjs --since-last \
+  --backfill-sources https://us-insight.com/secrets/31991,https://us-insight.com/secrets/32402,https://us-insight.com/secrets/32424 \
+  --allow-missing-pdf-sources https://us-insight.com/secrets/32424
+bash scripts/vps-hourly-sync.sh </dev/null
+```
+
+10월 1일 굿모닝 글은 원본 오디오가 계속 없으면 재시도 목록에 남습니다. 6회차 녹화본은 YouTube 업로드가 성공해야 등록됩니다. PDF 없이 먼저 등록한 글의 ID는 `posts.json`에서 원본 URL `https://us-insight.com/secrets/32424`로 찾을 수 있습니다. Drive 용량을 확보한 뒤 해당 ID로 PDF만 복구하고, 다시 동기화 스크립트를 실행해 커밋/푸시합니다.
+
+```bash
+POST_ID=566  # 실제 게시글 ID로 변경
+flock -n .sync-us-insight.lock node scripts/sync-us-insight.mjs --repair-pdf-ids "$POST_ID"
+bash scripts/vps-hourly-sync.sh </dev/null
+```
+
+PDF가 누락된 새 게시글에도 위 PDF 복구 명령을 사용할 수 있습니다. Drive 용량이 부족한 동안 일반 PDF 게시글은 기존처럼 보류되고 재시도 목록에 남습니다.
 
 - Telegram 알림은 새 글이 실제로 commit/push된 경우에만 전송됩니다.
 - `TELEGRAM_BOT_TOKEN` 또는 `TELEGRAM_CHAT_ID`가 없으면 알림만 건너뛰고 동기화는 계속 진행됩니다.
