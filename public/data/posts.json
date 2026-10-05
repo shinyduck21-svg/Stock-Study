@@ -1,5 +1,32 @@
 [
     {
+        "id": 568,
+        "title": "615화. 🌞 10월 6일 화요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "video",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_568.md",
+        "sourceUrl": "https://us-insight.com/secrets/32780",
+        "youtubeUrl": "https://www.youtube.com/watch?v=NazCF3iXQK0"
+    },
+    {
+        "id": 569,
+        "title": "1155화. 🙋 10월6일 담쌤의 언제나 데이트",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_569.md",
+        "sourceUrl": "https://us-insight.com/secrets/32334"
+    },
+    {
         "id": 562,
         "title": "12화. [사전예습도감] 투자학교 일곱번째 사전예습도감이 도착했습니다!",
         "time": "방금 전",
@@ -77,6 +104,19 @@
         "isNew": true,
         "fileName": "briefing_559.md",
         "sourceUrl": "https://us-insight.com/secrets/32022"
+    },
+    {
+        "id": 570,
+        "title": "https://us-insight.com/secrets/32328",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_570.md",
+        "sourceUrl": "https://us-insight.com/secrets/32328"
     },
     {
         "id": 560,
