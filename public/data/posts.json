@@ -105,6 +105,33 @@
         "sourceUrl": "https://us-insight.com/secrets/32020"
     },
     {
+        "id": 566,
+        "title": "25화. [정규수업 녹화본] 가을학기 6회차 정규수업 녹화본이 도착했습니다!",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "video",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_566.md",
+        "sourceUrl": "https://us-insight.com/secrets/32402",
+        "youtubeUrl": "https://www.youtube.com/watch?v=bv0V0QHJzY4"
+    },
+    {
+        "id": 567,
+        "title": "11화. [기업분석도감] 가을학기 여섯번째 기업분석도감이 도착했습니다!",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "text",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_567.md",
+        "sourceUrl": "https://us-insight.com/secrets/32424"
+    },
+    {
         "id": 565,
         "title": "606화. 🌞 9월 30일 수요일 굿모닝 담쌤",
         "time": "방금 전",
