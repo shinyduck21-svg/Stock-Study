@@ -66,9 +66,11 @@ cd /home/ubuntu/Stock-Study
 CHROME_HEADLESS=1 node scripts/sync-us-insight.mjs --since-last --dry-run --skip-media
 ```
 
+자동 실행 중 어스플러스 `/signin`으로 이동하면 스크립트가 네이버 SNS 로그인 아이콘을 한 번 클릭한 뒤 원래 콘텐츠 목록으로 돌아와 로그인 상태를 확인합니다. 저장된 네이버 세션이 없거나 추가 인증이 필요하면 자동 복구를 중단하고 `Login diagnostics`를 남깁니다. 비밀번호를 저장하거나 입력하지는 않습니다.
+
 여기에서도 로그인 화면이 나오면 Chrome 종료·프로필 저장 상태와 사이트 세션 만료를 확인해야 합니다. X11의 `No authorisation provided` 또는 `Missing X server or $DISPLAY` 오류는 로그인 상태가 아니라 화면 연결 문제입니다.
 
-동기화에서 `Naver login is required`가 나오면 바로 앞의 `Login diagnostics` 줄을 확인합니다. `url`은 쿼리 문자열을 제외한 주소이며, `reason`, `passwordInput`, `contentLinkCount`는 실제 로그인 화면인지 구분하는 단서입니다. `reason=sign-in URL` 또는 `password form`이면 해당 프로필의 사이트 로그인 상태를 확인하고, URL이 콘텐츠 목록인데 링크 수가 0이면 페이지 로딩이나 사이트 변경 가능성을 먼저 확인합니다.
+동기화에서 `US Insight login is required`가 나오면 바로 앞의 `Login diagnostics` 줄을 확인합니다. `url`은 쿼리 문자열을 제외한 주소이며, `reason`, `passwordInput`, `contentLinkCount`는 실제 로그인 화면인지 구분하는 단서입니다. `reason=sign-in URL` 또는 `password form`이면 해당 프로필의 사이트 로그인 상태를 확인하고, URL이 콘텐츠 목록인데 링크 수가 0이면 페이지 로딩이나 사이트 변경 가능성을 먼저 확인합니다.
 
 GitHub push 권한은 SSH deploy key 또는 GitHub token을 사용하는 HTTPS remote로 설정하면 됩니다. cron을 켜기 전에 아래 명령으로 push 권한을 먼저 확인합니다.
 

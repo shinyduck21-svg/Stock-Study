@@ -31,6 +31,8 @@ import {
   buildSingleSourcePost,
   applyRepairedPdfUrl,
   classifyLoginPage,
+  findNaverSsoIconCenter,
+  recoverUsInsightSession,
 } from './sync-us-insight.mjs';
 
 test('login label in a populated content list does not require reauthentication', () => {
@@ -46,6 +48,77 @@ test('sign-in URL and password form require reauthentication', () => {
   assert.equal(classifyLoginPage({ url: 'https://us-insight.com/signin', contentLinkCount: 0 }).reason, 'sign-in URL');
   assert.equal(classifyLoginPage({ url: 'https://us-insight.com/club/13/contents', passwordInput: true, contentLinkCount: 0 }).reason, 'password form');
   assert.deepEqual(classifyLoginPage({}), { required: false, reason: 'none' });
+});
+
+test('Naver SSO locator selects the visible sign-in icon', () => {
+  const icon = (src, width) => ({
+    getAttribute(name) { return name === 'src' ? src : ''; },
+    getBoundingClientRect() { return { left: 10, top: 20, width, height: 40 }; },
+  });
+  const doc = { querySelectorAll: () => [
+    icon('/assets/sns_login_google.png', 40),
+    icon('/assets/sns_login_naver.png', 0),
+    icon('/assets/sns_login_naver.png', 40),
+  ] };
+  assert.deepEqual(findNaverSsoIconCenter(doc), { x: 30, y: 40 });
+  assert.equal(findNaverSsoIconCenter({ querySelectorAll: () => [icon('/assets/sns_login_google.png', 40)] }), null);
+});
+
+test('Naver SSO recovery clicks once and verifies the original content page', async () => {
+  const sourceUrl = 'https://us-insight.com/club/13/contents?type=all';
+  let clicked = 0;
+  let navigated = 0;
+  let inspected = 0;
+  const result = await recoverUsInsightSession({
+    loginPage: { url: 'https://us-insight.com/signin', required: true },
+    sourceUrl,
+    clickNaver: async () => { clicked += 1; return true; },
+    inspect: async () => {
+      inspected += 1;
+      return inspected === 1
+        ? { url: 'https://us-insight.com/', required: false }
+        : { url: 'https://us-insight.com/club/13/contents', required: false };
+    },
+    navigate: async (url) => { assert.equal(url, sourceUrl); navigated += 1; },
+    wait: async () => {},
+  });
+  assert.deepEqual(result, { attempted: true, recovered: true });
+  assert.equal(clicked, 1);
+  assert.equal(navigated, 1);
+});
+
+test('Naver SSO recovery skips other login pages and fails closed without an active Naver session', async () => {
+  let clicked = 0;
+  const base = {
+    sourceUrl: 'https://us-insight.com/club/13/contents?type=all',
+    clickNaver: async () => { clicked += 1; return true; },
+    inspect: async () => ({ url: 'https://nid.naver.com/nidlogin.login', required: true }),
+    navigate: async () => {},
+    wait: async () => {},
+    maxChecks: 2,
+  };
+  assert.deepEqual(await recoverUsInsightSession({ ...base, loginPage: { url: 'https://nid.naver.com/nidlogin.login', required: true } }), { attempted: false, recovered: false });
+  assert.equal(clicked, 0);
+  assert.deepEqual(await recoverUsInsightSession({ ...base, loginPage: { url: 'https://us-insight.com/signin', required: true } }), { attempted: true, recovered: false });
+  assert.equal(clicked, 1);
+});
+
+test('Naver SSO recovery tolerates a transient navigation-context error', async () => {
+  let inspections = 0;
+  const result = await recoverUsInsightSession({
+    loginPage: { url: 'https://us-insight.com/signin', required: true },
+    sourceUrl: 'https://us-insight.com/club/13/contents?type=all',
+    clickNaver: async () => true,
+    inspect: async () => {
+      inspections += 1;
+      if (inspections === 1) throw new Error('Execution context was destroyed');
+      return { url: 'https://us-insight.com/club/13/contents', required: false };
+    },
+    navigate: async () => {},
+    wait: async () => {},
+  });
+  assert.deepEqual(result, { attempted: true, recovered: true });
+  assert.equal(inspections, 3);
 });
 
 test('PDF repair adds only the missing URL to the existing post', () => {

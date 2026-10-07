@@ -115,13 +115,35 @@ async function main() {
   await cdp.send('Network.enable');
   await waitForPage(cdp);
 
-  const loginPage = await inspectLoginPage(cdp);
+  let loginPage = await inspectLoginPage(cdp);
   if (loginPage.required) {
-    console.error(`Login diagnostics: ${JSON.stringify(loginPage)}`);
-    if (headless || !process.stdin.isTTY) {
-      throw new Error('Naver login is required, but this run is non-interactive. Refresh chrome_profile on the VPS or run with CHROME_HEADLESS=0 and complete login manually.');
+    if (headless) {
+      try {
+        const recovery = await recoverUsInsightSession({
+          loginPage,
+          sourceUrl,
+          clickNaver: () => clickNaverSso(cdp),
+          inspect: () => inspectLoginPage(cdp),
+          navigate: async (url) => {
+            await cdp.send('Page.navigate', { url });
+            await waitForPage(cdp);
+          },
+        });
+        if (recovery.attempted) {
+          console.log(`Naver SSO session recovery ${recovery.recovered ? 'succeeded' : 'did not restore the US Insight session'}.`);
+        }
+        if (recovery.recovered) loginPage = await inspectLoginPage(cdp);
+      } catch (error) {
+        console.warn(`Naver SSO session recovery failed: ${error.message}`);
+      }
     }
-    console.log('\nNaver login is required.');
+  }
+  if (loginPage.required) {
+    console.error(`Login diagnostics: ${JSON.stringify(await inspectLoginPage(cdp))}`);
+    if (headless || !process.stdin.isTTY) {
+      throw new Error('US Insight login is required, but this run is non-interactive. Refresh chrome_profile on the VPS manually.');
+    }
+    console.log('\nUS Insight login is required.');
     console.log('Finish the login in the Chrome window that opened, return here, then press Enter.');
     await promptEnter();
     await cdp.send('Page.navigate', { url: sourceUrl });
@@ -899,6 +921,51 @@ export function classifyLoginPage({ url = '', loginText = false, passwordInput =
     reason = 'login text without content links';
   }
   return { required: reason !== 'none', reason };
+}
+
+export function findNaverSsoIconCenter(doc = document) {
+  for (const icon of doc.querySelectorAll('img, input[type="image"]')) {
+    const label = `${icon.getAttribute('src') || ''} ${icon.getAttribute('alt') || ''}`;
+    if (!/sns[_-]?login[_-]?naver|네이버|naver/i.test(label)) continue;
+    const rect = icon.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) continue;
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  }
+  return null;
+}
+
+async function clickNaverSso(cdp) {
+  const point = await evaluate(cdp, findNaverSsoIconCenter);
+  if (!point) return false;
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1 });
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', clickCount: 1 });
+  return true;
+}
+
+export async function recoverUsInsightSession({ loginPage, sourceUrl, clickNaver, inspect, navigate, wait = delay, maxChecks = 5 }) {
+  if (!/^https:\/\/us-insight\.com\/signin\/?$/i.test(loginPage.url || '')) {
+    return { attempted: false, recovered: false };
+  }
+  if (!await clickNaver()) return { attempted: false, recovered: false };
+
+  const source = new URL(sourceUrl);
+  for (let check = 0; check < maxChecks; check += 1) {
+    await wait(2_000);
+    try {
+      const page = await inspect();
+      if (!page.required && page.url?.startsWith(source.origin)) break;
+    } catch {
+      // Navigation may replace the JavaScript context while SSO redirects.
+    }
+  }
+  await navigate(sourceUrl);
+  await wait(2_000);
+  const page = await inspect();
+  const expectedPath = source.origin + source.pathname;
+  return {
+    attempted: true,
+    recovered: !page.required && page.url === expectedPath,
+  };
 }
 
 async function inspectLoginPage(cdp) {
