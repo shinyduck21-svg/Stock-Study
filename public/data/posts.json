@@ -1,5 +1,19 @@
 [
     {
+        "id": 582,
+        "title": "623화. 🌞 10월 13일 화요일 굿모닝 담쌤",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "video",
+        "category": "기업분석도감",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_582.md",
+        "sourceUrl": "https://us-insight.com/secrets/33683",
+        "youtubeUrl": "https://www.youtube.com/watch?v=64mRUGupS4g"
+    },
+    {
         "id": 580,
         "title": "614화. 🌞 10월 12일 월요일 굿모닝 담쌤",
         "time": "방금 전",
@@ -52,6 +66,19 @@
         "isNew": true,
         "fileName": "briefing_578.md",
         "sourceUrl": "https://us-insight.com/secrets/33355"
+    },
+    {
+        "id": 583,
+        "title": "https://us-insight.com/secrets/32801",
+        "time": "방금 전",
+        "term": "26년 가을학기",
+        "type": "text",
+        "category": "언제나 데이트",
+        "likes": 0,
+        "isRead": false,
+        "isNew": true,
+        "fileName": "briefing_583.md",
+        "sourceUrl": "https://us-insight.com/secrets/32801"
     },
     {
         "id": 577,
